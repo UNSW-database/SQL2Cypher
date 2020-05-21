@@ -1,6 +1,6 @@
 # Convert SQL to Cypher
 
-There are some examples which come from (neo4j)[https://neo4j.com/developer/guide-sql-to-cypher/]
+There are some examples which come from [neo4j](https://neo4j.com/developer/guide-sql-to-cypher/)
 
 ```sql
 SELECT p.*
@@ -28,3 +28,5 @@ LIMIT 10;
 ```
 
 # Plan
+
+To be determined
