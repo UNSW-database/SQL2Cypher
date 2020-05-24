@@ -25,8 +25,16 @@ def handle_select_from(data, from_type=True):
     if type(data) == dict:
         # if the type of data is dict that means it only has one source
         # assume the select format: from xx as x
-        result += "({}:{})".format(data['name'], data['value']) if from_type \
-            else "{}".format(data['value'])
+        # result += "({}:{})".format(data['name'], data['value']) if from_type \
+        #     else "{}".format(data['value'])
+        if from_type:
+            result += "({}:{})".format(data['name'], data['value'])
+        else:
+            # if type data is dict, that means it should be keywords
+            if type(data['value']) == dict:
+                result += ",".join(" {} {} ".format(str(key).upper(), value) for key, value in data['value'].items())
+            else:
+                result += "{}".format(data['value'])
 
     if type(data) == list:
         # if the type of data is list that means it has more than one source
@@ -162,6 +170,7 @@ def parse_sql(query):
     # because we need to check the format of sql
     try:
         data = parse(query)
+        print(data)
     except ValueError:
         raise ValueError("The sql query incorrect, please check the format for sql")
     result = handle_select_from(data['from']) + " "
@@ -170,14 +179,14 @@ def parse_sql(query):
     result += handle_select_from(data['select'], from_type=False)
 
     # handle order by
-    result += handle_order(data['orderby'])
-
-    result += " LIMIT {}".format(data['limit']) if data['limit'] is not None else result
+    result += handle_order(data['orderby']) if 'orderby' in data else ""
+    result += " LIMIT {}".format(data['limit']) if 'limit' in data else ""
     print(result)
 
 
 if __name__ == '__main__':
-    # sql = "SELECT p.* FROM products as p;"
+    sql = "SELECT p.* FROM products as p;"
     # sql = "SELECT p.ProductName, p.UnitPrice FROM products AS p WHERE p.ProductName != 'Chocolade' AND p.x <= 0;"
-    sql = "SELECT p.ProductName, p.UnitPrice FROM products as p ORDER BY p.UnitPrice DESC, p.UnitPrice ASC LIMIT 10;"
+    # sql = "SELECT p.ProductName, p.UnitPrice FROM products as p ORDER BY p.UnitPrice DESC, p.UnitPrice ASC LIMIT 10;"
+    # sql = "SELECT DISTINCT c.CompanyName FROM customers AS c JOIN orders AS o ON (c.CustomerID = o.CustomerID) JOIN order_details AS od ON (o.OrderID = od.OrderID) JOIN products AS p ON (od.ProductID = p.ProductID) WHERE p.ProductName = 'Chocolade';"
     parse_sql(sql)
