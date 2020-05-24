@@ -27,6 +27,10 @@ ORDER BY p.unitPrice DESC
 LIMIT 10;
 ```
 
+In cypher, when we create node in cypher we need node name and label name like `CREATE (p:Product)`. 
+So when execute the sql query, it should like this format: `SELECT * FROM Product as p` (we need to known the label name).
+
+
 # Useful packages
 
 1. [sqlparse](https://sqlparse.readthedocs.io/en/latest/intro/)
@@ -45,6 +49,15 @@ LIMIT 10;
    ```
 
    Another [blog](https://blog.csdn.net/qq_39607437/article/details/79620383)
+
+2. [cypher](https://www.w3cschool.cn/neo4j/neo4j_cql_match_command.html)
+    This is the cypher tutorial.
+
+3. [moz-sql-parser](https://github.com/mozilla/moz-sql-parser)
+    It can parser the sql into a json format
+    ```json
+   '{"select": [{"value": "p.ProductName"}, {"value": "p.UnitPrice"}], "from": {"value": "products", "name": "p"}, "orderby": {"value": "p.UnitPrice", "sort": "desc"}, "limit": 10}'
+    ```
 
 # Plan
 
