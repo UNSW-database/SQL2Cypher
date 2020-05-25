@@ -1,1 +1,0 @@
-SELECT company.* FROM Company as company;

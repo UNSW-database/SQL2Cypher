@@ -33,11 +33,11 @@ So when execute the sql query, it should like this format: `SELECT * FROM Produc
 # How to use it
 
 ```shell script
-python3 sql2cypher < test.txt
+python3 sql2cypher < sql.txt
 # or you can type sql by yourself
 python3 sql2cypher
 ```
-
+In `sql.txt` you can find more examples.
 For test whether the syntax correct, you can import the data to MySQL and NEO4J.
 You can read how to [import](/data/README.md) 
 

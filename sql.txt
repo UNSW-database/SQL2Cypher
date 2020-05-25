@@ -1,0 +1,3 @@
+SELECT company.* FROM Company as company;
+SELECT p.ProductName, p.UnitPrice FROM products AS p WHERE p.ProductName != 'Chocolade' AND p.x <= 0;
+SELECT p.ProductName, p.UnitPrice FROM products as p ORDER BY p.UnitPrice DESC, p.UnitPrice ASC LIMIT 10;
