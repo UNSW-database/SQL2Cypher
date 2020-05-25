@@ -30,6 +30,16 @@ LIMIT 10;
 In cypher, when we create node in cypher we need node name and label name like `CREATE (p:Product)`. 
 So when execute the sql query, it should like this format: `SELECT * FROM Product as p` (we need to known the label name).
 
+# How to use it
+
+```shell script
+python3 sql2cypher < test.txt
+# or you can type sql by yourself
+python3 sql2cypher
+```
+
+For test whether the syntax correct, you can import the data to MySQL and NEO4J.
+You can read how to [import](/data/README.md) 
 
 # Useful packages
 

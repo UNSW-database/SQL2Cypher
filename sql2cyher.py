@@ -5,7 +5,7 @@ Date: 21/05/2020
 Description:
     Convert SQL to cypher
 """
-import json
+import sys
 from moz_sql_parser import parse
 
 
@@ -32,9 +32,10 @@ def handle_select_from(data, from_type=True):
         else:
             # if type data is dict, that means it should be keywords
             if type(data['value']) == dict:
-                result += ",".join(" {} {} ".format(str(key).upper(), value) for key, value in data['value'].items())
+                result += ",".join(" {} {} ".format(str(key).upper(), str(value).replace('.*', ''))
+                                   for key, value in data['value'].items())
             else:
-                result += "{}".format(data['value'])
+                result += "{}".format(str(data['value']).replace('.*', ''))
 
     if type(data) == list:
         # if the type of data is list that means it has more than one source
@@ -170,7 +171,7 @@ def parse_sql(query):
     # because we need to check the format of sql
     try:
         data = parse(query)
-        print(data)
+        # print(data)
     except ValueError:
         raise ValueError("The sql query incorrect, please check the format for sql")
     result = handle_select_from(data['from']) + " "
@@ -181,12 +182,13 @@ def parse_sql(query):
     # handle order by
     result += handle_order(data['orderby']) if 'orderby' in data else ""
     result += " LIMIT {}".format(data['limit']) if 'limit' in data else ""
-    print(result)
+    return result + ";"
 
 
 if __name__ == '__main__':
-    sql = "SELECT p.* FROM products as p;"
+    # sql = "SELECT company.* FROM Company as company;"
     # sql = "SELECT p.ProductName, p.UnitPrice FROM products AS p WHERE p.ProductName != 'Chocolade' AND p.x <= 0;"
     # sql = "SELECT p.ProductName, p.UnitPrice FROM products as p ORDER BY p.UnitPrice DESC, p.UnitPrice ASC LIMIT 10;"
-    # sql = "SELECT DISTINCT c.CompanyName FROM customers AS c JOIN orders AS o ON (c.CustomerID = o.CustomerID) JOIN order_details AS od ON (o.OrderID = od.OrderID) JOIN products AS p ON (od.ProductID = p.ProductID) WHERE p.ProductName = 'Chocolade';"
-    parse_sql(sql)
+    lines = sys.stdin.readlines()
+    for sql in lines:
+        print(parse_sql(sql))
