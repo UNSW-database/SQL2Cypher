@@ -11,8 +11,8 @@ from utils.SQLParser import SQLParser
 
 if __name__ == '__main__':
     # sql = "SELECT company.* FROM Company as company;"
-    sql_parser = SQLParser()
     lines = sys.stdin.readlines()
     for sql in lines:
+        sql_parser = SQLParser()
         sql_parser.generate_cypher(parse(sql))
         print(sql_parser.get_cypher())

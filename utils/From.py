@@ -13,6 +13,6 @@ class From(AbsSQL):
         self.check_data(data)
 
         if type(data) == dict:
-            self.cypher += "({}:{})".format(data['name'], data['value'])
+            self.cypher += "({}:{}) ".format(data['name'], data['value'])
         elif type(data) == list:
             pass
