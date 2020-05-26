@@ -64,11 +64,13 @@ You can read how to [import](/data/README.md)
     This is the cypher tutorial.
 
 3. [moz-sql-parser](https://github.com/mozilla/moz-sql-parser)
-    It can parser the sql into a json format
-    ```json
+    It can parser the SQL into a JSON format
+    
+   ```json
    '{"select": [{"value": "p.ProductName"}, {"value": "p.UnitPrice"}], "from": {"value": "products", "name": "p"}, "orderby": {"value": "p.UnitPrice", "sort": "desc"}, "limit": 10}'
-    ```
+   ```
 
-# Plan
+# TODO
 
-To be determined
+- [ ] Convert MySQL database into Neo4J with relation.
+- [ ] Make join SQL query works for neo4j.
