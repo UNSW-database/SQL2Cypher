@@ -74,3 +74,4 @@ You can read how to [import](/data/README.md)
 
 - [ ] Convert MySQL database into Neo4J with relation.
 - [ ] Make join SQL query works for neo4j.
+- [ ] Interactive CLI and WebUI.
