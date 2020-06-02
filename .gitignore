@@ -52,3 +52,4 @@ docs/_build/
 .idea
 
 .pytest_cache
+test_case.py
