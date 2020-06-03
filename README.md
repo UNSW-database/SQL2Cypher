@@ -70,6 +70,12 @@ You can read how to [import](/data/README.md)
    '{"select": [{"value": "p.ProductName"}, {"value": "p.UnitPrice"}], "from": {"value": "products", "name": "p"}, "orderby": {"value": "p.UnitPrice", "sort": "desc"}, "limit": 10}'
    ```
 
+# How to add relation for tables
+Firstly, you need to choose `2. Convert the whole database to cypher` and then it will display all the tables which in your database. 
+Then you need to add relation like this format: Table->Table: Relation | Table<->Table: Relation (eg: A->B: Working).
+`->` means one to one relation from a to b, `<->` a has relation to b and b has relation to a.
+
+
 # TODO
 
 - [ ] Convert MySQL database into Neo4J with relation.
