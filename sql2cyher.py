@@ -39,4 +39,5 @@ if __name__ == '__main__':
         cypher_password = "li1998"
 
         cb = ConvertDB(db,user,password,cypher_user,cypher_password)
-        print(cb.execute_sql("show tables", ()))
+        # print(cb.execute_sql("show tables", ()))
+        cb.read_relations()
