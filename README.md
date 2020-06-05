@@ -76,6 +76,8 @@ You can read how to [import](/data/README.md)
    ```json
    '{"select": [{"value": "p.ProductName"}, {"value": "p.UnitPrice"}], "from": {"value": "products", "name": "p"}, "orderby": {"value": "p.UnitPrice", "sort": "desc"}, "limit": 10}'
    ```
+4. [py2neo](https://py2neo.org/v4/index.html)
+   similar with neomodel
 
 # How to add relation for tables
 Firstly, you need to choose `2. Convert the whole database to cypher` and then it will display all the tables which in your database. 
