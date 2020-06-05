@@ -32,13 +32,13 @@ if __name__ == '__main__':
         # password = input("Please input the sql password which you want to convert: ")
         # cypher_user = input("Please enter you cypher user: ")
         # cypher_password = input("Please enter you cypher password: ")
-        db = "test"
-        user = "lsy"
-        password = "li1998"
+        db = "employees"
+        user = "root"
+        password = "5232622162"
         cypher_user = "neo4j"
-        cypher_password = "li1998"
+        cypher_password = "5232622162"
 
         cb = ConvertDB(db,user,password,cypher_user,cypher_password)
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
-        cb.export_tables()
+        cb.export_tables(db)

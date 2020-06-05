@@ -5,7 +5,10 @@ import os
 import pickle
 import pandas as pd
 import mysql.connector
-from neomodel import db
+from mysql.connector import errorcode
+from py2neo import Graph
+from py2neo.matching import NodeMatcher
+# from neomodel import db
 
 
 class ConvertDB:
@@ -19,14 +22,19 @@ class ConvertDB:
         self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
         self.set_up_cypher()
         self.filepath = os.getcwd() + "/data/"
-        self.export_path = '/var/lib/neo4j/import'
+        # self.export_path = '/var/lib/neo4j/import'
+        self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
 
     def set_up_cypher(self):
         """
         set up the cypher server
         :return:
         """
-        db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
+        graph = Graph("bolt://localhost:7687", username=self.cypher_user, password=self.cypher_password)
+        matcher = NodeMatcher(graph)
+        match_result = matcher.match("Person").first()
+        print(match_result)
+        # db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
 
     def execute_sql(self, query, args=()):
         """
@@ -35,13 +43,22 @@ class ConvertDB:
         :param args: args in sql
         :return: all the values get from db
         """
-        mydb = mysql.connector.connect(
-            host=self.ip,
-            user=self.user,
-            password=self.password,
-            database=self.db,
-            auth_plugin='mysql_native_password'
-        )
+        try:
+            mydb = mysql.connector.connect(
+                host=self.ip,
+                user=self.user,
+                password=self.password,
+                database=self.db,
+                auth_plugin='mysql_native_password'
+            )
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password!")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database dose not exist!")
+            else:
+                print("err")
+            exit()
 
         mycursor = mydb.cursor()
 
@@ -123,13 +140,18 @@ class ConvertDB:
 
         return export_tables
 
-    def export_tables(self):
+    def export_tables(self, db_name):
         """
         export the table data into csv ready to load into database
         :return:
         """
-        # export_tables = self.read_relations()
-        export_tables = [{'employees': None}]
+        export_tables = []
+        tables = self.execute_sql("SHOW TABLES", ())
+        for table in tables:
+            table_name = table['Tables_in_{}'.format(db_name)]
+            export_tables.append({table_name: None})
+
+        print("Starting export csv files for TABLES! Please wait for a while ...")
         for table in export_tables:
             key = list(table.keys())[0]
             if table[key] is None:
@@ -141,6 +163,7 @@ class ConvertDB:
             else:
                 # means it should have some relation
                 pass
+        print("Export finished!")
 
 
 
