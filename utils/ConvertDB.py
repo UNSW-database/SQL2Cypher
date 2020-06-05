@@ -61,45 +61,44 @@ class ConvertDB:
             for k, v in t.items():
                 tables.append(t[k])
 
-        print("\nThe function can not detect the relation between tables.\n"
-              "Please enter the relation in format: a->b: relationship, a<->b: relationship. There are the tables: \n")
-        for table in tables:
-            print(table)
+        query = """
+            SELECT `TABLE_NAME`,  `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME`
+            FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` 
+            WHERE `TABLE_SCHEMA` = SCHEMA() 
+                AND `REFERENCED_TABLE_NAME` IS NOT NULL;
+        """
 
-        relation = {}
+        relation = []
         try:
             files = open(filepath, "rb")
             data = pickle.load(files)
             print(data)
-            if type(data) is dict:
+            if type(data) is list:
                 relation = data
         except FileNotFoundError:
             pass
 
-        lines = sys.stdin.readlines()
-        for line in lines:
-            t = line.split("<->")
-            # one to one relation
-            if len(t) != 0 and "<->" in line:
-                # r.0 is table name r.1 is relation name
-                t1 = t[0]
-                r = t[1].split(": ")
-                t2 = r[0]
-                r = r[1]
-                relation[t1] = {
-                    t2: r
-                }
-                relation[t2] = {
-                    t2: r
-                }
-            else:
-                t = line.split("->")
-                if len(t) == 0:
-                    raise ValueError("Incorrect relation type")
-                r = t[1].split(": ")
-                relation[t[0]] = {
-                    r[0]: r[1]
-                }
+        visited_tables = set()
+        relation_tables = self.execute_sql(query)
+        for rt in relation_tables:
+            r = {}
+            re = input("Please enter the relation between {}->{}: ".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']))
+            re = "{}_{}".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']) if re is "" else re
+
+            r[rt['REFERENCED_TABLE_NAME']] = {
+                'to': rt['TABLE_NAME'],
+                'on': rt['REFERENCED_COLUMN_NAME'],
+                'relation': re
+            }
+            visited_tables.add(rt['REFERENCED_TABLE_NAME'])
+            visited_tables.add(rt['TABLE_NAME'])
+            relation.append(r)
+
+        for table in tables:
+            r = {}
+            if table not in visited_tables:
+                r[table] = None
+                relation.append(r)
 
         # now try to solve the relation to pickle
         files = open(filepath, "wb")

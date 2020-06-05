@@ -75,6 +75,37 @@ Firstly, you need to choose `2. Convert the whole database to cypher` and then i
 Then you need to add relation like this format: Table->Table: Relation | Table<->Table: Relation (eg: A->B: Working).
 `->` means one to one relation from a to b, `<->` a has relation to b and b has relation to a.
 
+# Get relation between tables
+```mysql
+SELECT `TABLE_NAME`,  `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME`
+FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` 
+WHERE `TABLE_SCHEMA` = SCHEMA() 
+    AND `REFERENCED_TABLE_NAME` IS NOT NULL;
+```
+
+Show table schema:
+```mysql
+SELECT COLUMN_NAME FROM   INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'table_name';
+```
+
+It was stored as dict format and the name of table is key, `to` is the relation table, `on` is the foreign key, 
+`relation` is the relationship between two tables. If the table does not have any relation the value will be None. 
+And it looks like:
+```json
+[
+   {
+      "departments":{
+         "to":"dept_manager",
+         "on":"dept_no",
+         "relation":"departments_dept_manager"
+      
+      }
+  },
+  {
+      "employee": None
+  }
+]
+```
 
 # TODO
 
