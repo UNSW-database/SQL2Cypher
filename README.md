@@ -1,3 +1,10 @@
+# Attention
+Before convert sql to cypher make sure the programming has permission to write files. 
+You can execute the following code to get enough permission for python3:
+```shell script
+sudo chmod 777 /var/lib/neo4j/import
+```
+
 # Convert SQL to Cypher
 
 There are some examples which come from [neo4j](https://neo4j.com/developer/guide-sql-to-cypher/)
@@ -33,9 +40,9 @@ So when execute the sql query, it should like this format: `SELECT * FROM Produc
 # How to use it
 
 ```shell script
-python3 sql2cypher < sql.txt
+python3 sql2cypher.py < sql.txt
 # or you can type sql by yourself
-python3 sql2cypher
+python3 sql2cypher.py
 ```
 In `sql.txt` you can find more examples.
 For test whether the syntax correct, you can import the data to MySQL and NEO4J.

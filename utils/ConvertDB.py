@@ -2,8 +2,8 @@
 This section code working on convert the whole database to cypher
 """
 import os
-import sys
 import pickle
+import pandas as pd
 import mysql.connector
 from neomodel import db
 
@@ -18,6 +18,8 @@ class ConvertDB:
         self.ip = ip if ip is not None else "localhost"
         self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
         self.set_up_cypher()
+        self.filepath = os.getcwd() + "/data/"
+        self.export_path = '/var/lib/neo4j/import'
 
     def set_up_cypher(self):
         """
@@ -46,7 +48,25 @@ class ConvertDB:
         mycursor.execute(query, args)
         res = [dict((mycursor.description[idx][0], value)
                     for idx, value in enumerate(row)) for row in mycursor.fetchall()]
+
+        mydb.commit()
+        mydb.close()
         return res
+
+    def load_pickle(self):
+        """
+        load pickle files
+        :return: pickle info
+        """
+        filepath = self.filepath + "/relation.pickle"
+        try:
+            files = open(filepath, "rb")
+            data = pickle.load(files)
+            if type(data) is list:
+                return data
+        except FileNotFoundError:
+            return None
+        return None
 
     def read_relations(self):
         """
@@ -54,7 +74,7 @@ class ConvertDB:
         :return: nothing
         """
         # get all the tables
-        filepath = os.getcwd() + "/data/relation.pickle"
+        filepath = self.filepath + "/relation.pickle"
         all_table = self.execute_sql("SHOW TABLES;")
         tables = []
         for t in all_table:
@@ -68,22 +88,18 @@ class ConvertDB:
                 AND `REFERENCED_TABLE_NAME` IS NOT NULL;
         """
 
-        relation = []
-        try:
-            files = open(filepath, "rb")
-            data = pickle.load(files)
-            print(data)
-            if type(data) is list:
-                relation = data
-        except FileNotFoundError:
-            pass
+        # all the relations which stored in pickle
+        data = self.load_pickle()
+        relation = [] if data is None else data
 
+        # for this time which need to be export
+        export_tables = []
         visited_tables = set()
         relation_tables = self.execute_sql(query)
         for rt in relation_tables:
             r = {}
             re = input("Please enter the relation between {}->{}: ".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']))
-            re = "{}_{}".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']) if re is "" else re
+            re = "{}_{}".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']) if re == "" else re
 
             r[rt['REFERENCED_TABLE_NAME']] = {
                 'to': rt['TABLE_NAME'],
@@ -92,16 +108,40 @@ class ConvertDB:
             }
             visited_tables.add(rt['REFERENCED_TABLE_NAME'])
             visited_tables.add(rt['TABLE_NAME'])
-            relation.append(r)
+            export_tables.append(r)
 
         for table in tables:
             r = {}
             if table not in visited_tables:
                 r[table] = None
-                relation.append(r)
+                export_tables.append(r)
 
         # now try to solve the relation to pickle
+        relation += export_tables
         files = open(filepath, "wb")
         pickle.dump(relation, files)
+
+        return export_tables
+
+    def export_tables(self):
+        """
+        export the table data into csv ready to load into database
+        :return:
+        """
+        # export_tables = self.read_relations()
+        export_tables = [{'employees': None}]
+        for table in export_tables:
+            key = list(table.keys())[0]
+            if table[key] is None:
+                # it means the table is independent
+                data = self.execute_sql("SELECT * FROM %s;" % key)
+                cols = data[0].keys()
+                df = pd.DataFrame(data, columns=cols)
+                df.to_csv(self.export_path + '/{}.csv'.format(key), index=False)
+            else:
+                # means it should have some relation
+                pass
+
+
 
 

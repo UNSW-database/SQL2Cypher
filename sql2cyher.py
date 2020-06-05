@@ -40,4 +40,5 @@ if __name__ == '__main__':
 
         cb = ConvertDB(db,user,password,cypher_user,cypher_password)
         # print(cb.execute_sql("show tables", ()))
-        cb.read_relations()
+        # cb.read_relations()
+        cb.export_tables()
