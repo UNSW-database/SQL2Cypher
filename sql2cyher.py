@@ -33,12 +33,12 @@ if __name__ == '__main__':
         # cypher_user = input("Please enter you cypher user: ")
         # cypher_password = input("Please enter you cypher password: ")
         db = "employees"
-        user = "root"
-        password = "5232622162"
+        user = "lsy"
+        password = "li1998"
         cypher_user = "neo4j"
-        cypher_password = "5232622162"
+        cypher_password = "li1998"
 
         cb = ConvertDB(db,user,password,cypher_user,cypher_password)
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
-        cb.export_tables(db)
+        cb.export_tables()
