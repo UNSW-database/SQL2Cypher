@@ -46,6 +46,7 @@ class From(AbsSQL):
                 tables.append(t['join']['value'])
 
         relation = self.load_relation()
+        print(relation)
         for r in relation:
             key = str(list(r.keys())[0])
             if key in tables:

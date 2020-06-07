@@ -131,6 +131,9 @@ class ConvertDB:
                 export_tables.append(r)
 
         # now try to solve the relation to pickle
+        for re in relation:
+            if re in export_tables:
+                export_tables.remove(re)
         relation += export_tables
         files = open(filepath, "wb")
         pickle.dump(relation, files)
