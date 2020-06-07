@@ -28,7 +28,7 @@ class CLI:
         lines = sys.stdin.readlines()
         for sql in lines:
             sql_parser = SQLParser()
-            sql_parser.generate_cypher(parse(sql))
+            sql_parser.generate_cypher(parse(sql), sql)
             print(sql_parser.get_cypher())
 
     @staticmethod
@@ -47,7 +47,6 @@ class CLI:
             add some config value
             :return:
             """
-            config = {}
             db = input("Please input the sql database which you want to convert: ")
             user = input("Please input the sql user which you want to convert: ")
             password = input("Please input the sql password which you want to convert: ")

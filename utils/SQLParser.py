@@ -14,10 +14,14 @@ class SQLParser:
         self.Where = Where("WHERE ")
         self.Limit = Limit("LIMIT ")
 
-    def generate_cypher(self, data):
+    def generate_cypher(self, data, sql):
         if "from" in data:
-            self.From.handle_sql(data['from'])
-            self.cypher += self.From.get_cypher()
+            if 'join' in sql:
+                self.From.handle_join(data)
+                self.cypher += self.From.get_cypher()
+            else:
+                self.From.handle_sql(data['from'])
+                self.cypher += self.From.get_cypher()
 
         if "where" in data:
             self.Where.handle_sql(data['where'])

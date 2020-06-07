@@ -5,6 +5,11 @@ You can execute the following code to get enough permission for python3:
 sudo chmod 777 /var/lib/neo4j/import
 ```
 
+Usage:
+```shell script
+python3 sql2cypher.py --help
+```
+
 # Convert SQL to Cypher
 
 There are some examples which come from [neo4j](https://neo4j.com/developer/guide-sql-to-cypher/)
@@ -40,7 +45,7 @@ So when execute the sql query, it should like this format: `SELECT * FROM Produc
 # How to use it
 
 ```shell script
-python3 sql2cypher.py < sql.txt
+python3 sql2cypher.py -s < sql.txt
 # or you can type sql by yourself
 python3 sql2cypher.py
 ```
@@ -119,5 +124,5 @@ And it looks like:
 # TODO
 
 - [x] Convert MySQL database into Neo4J with relation.
-- [ ] Make join SQL query works for neo4j.
+- [x] Make join SQL query works for neo4j. (It works on some sample join query)
 - [x] Interactive CLI and WebUI.
