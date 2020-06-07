@@ -6,39 +6,23 @@ Description:
     Convert SQL to cypher
 """
 import sys
-from moz_sql_parser import parse
-from utils.SQLParser import SQLParser
-from utils.ConvertDB import ConvertDB
+from utils.CLI import CLI
 
 if __name__ == '__main__':
     # sql = "SELECT company.* FROM Company as company;"
-    convert_type = input("You can choose the format of converting sql to cypher: \n"
-                         "\t1. Simple convert without join table\n"
-                         "\t2. Convert the whole database to cypher\n")
+    # get the command line
+    if len(sys.argv) > 2:
+        print("Please have a look the help: python3 sql2cypher.py --help")
+        exit()
 
-    if convert_type not in ['1', '2'] or len(convert_type) > 1:
-        raise ValueError("Incorrect number!")
-
-    if convert_type == '1':
-        print("Please input some sql: ")
-        lines = sys.stdin.readlines()
-        for sql in lines:
-            sql_parser = SQLParser()
-            sql_parser.generate_cypher(parse(sql))
-            print(sql_parser.get_cypher())
+    command = sys.argv[1]
+    cli = CLI()
+    if command == "--help":
+        cli.help()
+    elif command == "-s":
+        cli.transfer_sql()
+    elif command == "-c":
+        cli.convert_db()
     else:
-        # db = input("Please input the sql database which you want to convert: ")
-        # user = input("Please input the sql user which you want to convert: ")
-        # password = input("Please input the sql password which you want to convert: ")
-        # cypher_user = input("Please enter you cypher user: ")
-        # cypher_password = input("Please enter you cypher password: ")
-        db = "employees"
-        user = "lsy"
-        password = "li1998"
-        cypher_user = "neo4j"
-        cypher_password = "li1998"
+        raise ValueError("Invalid command")
 
-        cb = ConvertDB(db,user,password,cypher_user,cypher_password)
-        # print(cb.execute_sql("show tables", ()))
-        # cb.read_relations()
-        cb.export_tables()

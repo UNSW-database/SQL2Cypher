@@ -120,4 +120,4 @@ And it looks like:
 
 - [x] Convert MySQL database into Neo4J with relation.
 - [ ] Make join SQL query works for neo4j.
-- [ ] Interactive CLI and WebUI.
+- [x] Interactive CLI and WebUI.

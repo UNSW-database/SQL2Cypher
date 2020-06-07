@@ -10,3 +10,12 @@ WITH row[0] AS Code, row[1] AS Name, row[2] AS Address, row[3] AS Zip, row[4] as
 MERGE (company:Company {Code: Code})
   SET company.Name = Name, company.Address = Address, company.Zip = Zip, company.Country = Country
 ```
+
+Some examples for MySQL database:
+```shell script
+git clone git@github.com:datacharmer/test_db.git
+
+cd test_db
+
+mysql -u your_username -p < employees.sql
+```
