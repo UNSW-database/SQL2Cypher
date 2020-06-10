@@ -19,8 +19,8 @@ class ConvertDB:
         self.ip = ip if ip is not None else "localhost"
         self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
         self.filepath = os.getcwd() + "/data/"
-        # self.export_path = '/var/lib/neo4j/import'
-        self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
+        self.export_path = '/var/lib/neo4j/import'
+        # self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
 
     def execute_cypher(self, query):
         """
@@ -89,7 +89,6 @@ class ConvertDB:
         filepath = self.filepath + "/relation.pickle"
         all_table = self.execute_sql("SHOW TABLES;")
         tables = []
-        print("all tables: {}".format(all_table))
         for t in all_table:
             for k, v in t.items():
                 tables.append(t[k])

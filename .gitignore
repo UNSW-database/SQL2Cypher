@@ -49,9 +49,6 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-# pickle files
-data/*.pickle
-
 .idea
 
 .pytest_cache
