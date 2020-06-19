@@ -6,8 +6,9 @@ import pickle
 import pandas as pd
 import mysql.connector
 from mysql.connector import errorcode
-from neomodel import db
+from neomodel import db,config
 
+config.ENCRYPTED_CONNECTION = False
 
 class ConvertDB:
     def __init__(self, db, user, password, cypher_user, cypher_password, cypher_ip=None, ip=None):
@@ -19,8 +20,8 @@ class ConvertDB:
         self.ip = ip if ip is not None else "localhost"
         self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
         self.filepath = os.getcwd() + "/data/"
-        self.export_path = '/var/lib/neo4j/import'
-        # self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
+        # self.export_path = '/var/lib/neo4j/import'
+        self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
 
     def execute_cypher(self, query):
         """
