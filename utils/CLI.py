@@ -1,14 +1,27 @@
-import os
 import sys
-import pickle
 from moz_sql_parser import parse
 from utils.SQLParser import SQLParser
 from utils.ConvertDB import ConvertDB
+from configparser import ConfigParser, ParsingError, NoSectionError
 
 
 class CLI:
+    _config_path = "./conf/db.ini"
+
     def __init__(self):
-        pass
+        self.config = self._load_config()
+
+    def _load_config(self):
+        """
+        load the config file. Set it as private function
+        :return: the config Parser
+        """
+        try:
+            config = ConfigParser()
+            config.read(self._config_path)
+            return config
+        except ParsingError as err:
+            raise FileNotFoundError("Can not find config file in ./conf/db.ini")
 
     @staticmethod
     def help():
@@ -31,8 +44,7 @@ class CLI:
             sql_parser.generate_cypher(parse(sql), sql)
             print(sql_parser.get_cypher())
 
-    @staticmethod
-    def convert_db():
+    def convert_db(self):
         """
         convert the whole database in mysql
                 db = "employees"
@@ -42,49 +54,17 @@ class CLI:
                 cypher_password = "li1998"
         :return:
         """
-        def set_config():
-            """
-            add some config value
-            :return:
-            """
-            db = input("Please input the sql database which you want to convert: ")
-            user = input("Please input the sql user which you want to convert: ")
-            password = input("Please input the sql password which you want to convert: ")
-            cypher_user = input("Please enter you cypher user: ")
-            cypher_password = input("Please enter you cypher password: ")
-
-            config = {
-                'db': db,
-                'user': user,
-                'password': password,
-                'cypher_user': cypher_user,
-                'cypher_password': cypher_password
-            }
-            return config
-
-        filepath = os.getcwd() + "/data/config.pickle"
-        config = {}
         try:
-            files = open(filepath, "rb")
-            data = pickle.load(files)
-            if type(data) is dict:
-                config = data
-        except FileNotFoundError:
-            pass
+            mysql_config = self.config["mysql"]
+            neo4j_config = self.config["neo4j"]
+        except NoSectionError as err:
+            print("Can not find the section {} in db.ini".format(err))
+            raise KeyError(err.section)
+        finally:
+            print("Something wrong with the config")
 
-        if len(config) != 0:
-            default = input("Do you want to use the default value [y/n]: ")
-
-            if default.lower() == 'n':
-                config = set_config()
-        else:
-            config = set_config()
-
-        files = open(filepath, "wb")
-        pickle.dump(config, files)
-
-        cb = ConvertDB(config['db'], config['user'], config['password'],
-                       config['cypher_user'], config['cypher_password'])
+        cb = ConvertDB(mysql_config['database_name'], mysql_config['username'], mysql_config['li19980812'],
+                       neo4j_config['cypher_user'], neo4j_config['cypher_password'])
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
         cb.export_tables()
