@@ -10,6 +10,14 @@ Usage:
 python3 sql2cypher.py --help
 ```
 
+# Config
+Before execute the code, please make sure done the config:
+```shell script
+cd conf
+vim db.ini
+```
+Please complete the config then it should work.
+
 # Convert SQL to Cypher
 
 There are some examples which come from [neo4j](https://neo4j.com/developer/guide-sql-to-cypher/)

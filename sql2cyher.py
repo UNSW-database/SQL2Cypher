@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     command = sys.argv[1]
     cli = CLI()
+    # cli.cb.get_tables()
     if command == "--help":
         cli.help()
     elif command == "-s":

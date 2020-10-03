@@ -6,7 +6,7 @@ var width  = 960,
     height = 500,
     colors = d3.scale.category10();
 
-var svg = d3.select('body')
+var svg = d3.select('#myGraph')
     .append('svg')
     .attr('width', width)
     .attr('height', height);
@@ -19,8 +19,14 @@ var nodes = [
         {id: 'db1', reflexive: false},
         {id: 'db2', reflexive: true },
         {id: 'db3', reflexive: false}
-    ],
-    links = [
+    ];
+
+let tables = '{{ tables | tojson }}';
+tables = JSON.parse(tables);
+console.log(typeof tables);
+
+// var nodes = "{{tables}}";
+var links = [
         {source: nodes[0], target: nodes[1], left: false, right: true ,type: 'r1'},
         {source: nodes[1], target: nodes[2], left: false, right: true, type: 'r2'}
     ];

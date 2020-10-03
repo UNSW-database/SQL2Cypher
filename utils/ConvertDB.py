@@ -10,7 +10,11 @@ from neomodel import db,config
 
 config.ENCRYPTED_CONNECTION = False
 
+
 class ConvertDB:
+    _neo4j_export_path='/var/lib/neo4j/import'
+    _cache_path=os.getcwd() + '/cache/'
+
     def __init__(self, db, user, password, cypher_user, cypher_password, cypher_ip=None, ip=None):
         self.db = db
         self.user = user
@@ -19,11 +23,8 @@ class ConvertDB:
         self.cypher_password = cypher_password
         self.ip = ip if ip is not None else "localhost"
         self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
-        self.filepath = os.getcwd() + "/data/"
-        # self.export_path = '/var/lib/neo4j/import'
-        self.export_path = '/home/heldon/Directory/neo4j-community-4.0.4/import'
 
-    def execute_cypher(self, query):
+    def _execute_cypher(self, query):
         """
         set up the cypher server
         db connect:
@@ -33,7 +34,7 @@ class ConvertDB:
         db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
         db.cypher_query(query)
 
-    def execute_sql(self, query, args=()):
+    def _execute_sql(self, query, args=()):
         """
         execute the sql query language
         :param query: sql query language
@@ -71,7 +72,7 @@ class ConvertDB:
         load pickle files
         :return: pickle info
         """
-        filepath = self.filepath + "/relation.pickle"
+        filepath = self._cache_path + "/relation.pickle"
         try:
             files = open(filepath, "rb")
             data = pickle.load(files)
@@ -81,25 +82,44 @@ class ConvertDB:
             return None
         return None
 
+    def get_tables(self):
+        """
+        return all the tables in the db
+        :return: all the tables name
+        """
+        # get all the tables as a node
+        tables = self._execute_sql("SELECT table_name as id FROM "
+                                  "information_schema.tables "
+                                  "where table_schema='{}';".format(self.db))
+        return tables
+
+    def get_relations(self, only_table=False):
+        """
+        get all the relationship between tables
+        :return: array of relations
+        """
+        if not only_table:
+            query = "SELECT `TABLE_NAME`, `COLUMN_NAME`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME`"
+        else:
+            query = "SELECT `TABLE_NAME`,`REFERENCED_TABLE_NAME`"
+        query += "FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` WHERE `TABLE_SCHEMA` = SCHEMA() " \
+                 "AND `REFERENCED_TABLE_NAME` IS NOT NULL;"
+        relation_tables = self._execute_sql(query)
+
+        return relation_tables
+
     def read_relations(self):
         """
         get the tables relation by user typing
         :return: nothing
         """
         # get all the tables
-        filepath = self.filepath + "/relation.pickle"
-        all_table = self.execute_sql("SHOW TABLES;")
+        filepath = self._cache_path + "/relation.pickle"
+        all_table = self._execute_sql("SHOW TABLES;")
         tables = []
         for t in all_table:
             for k, v in t.items():
                 tables.append(t[k])
-
-        query = """
-            SELECT `TABLE_NAME`, `COLUMN_NAME`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME`
-            FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` 
-            WHERE `TABLE_SCHEMA` = SCHEMA() 
-                AND `REFERENCED_TABLE_NAME` IS NOT NULL;
-        """
 
         # all the relations which stored in pickle
         data = self.load_pickle()
@@ -108,7 +128,7 @@ class ConvertDB:
         # for this time which need to be export
         export_tables = []
         visited_tables = set()
-        relation_tables = self.execute_sql(query)
+        relation_tables = self.get_relations()
         for rt in relation_tables:
             r = {}
             re = input(
@@ -157,36 +177,42 @@ class ConvertDB:
             :param key:
             :return:
             """
-            data = self.execute_sql("SELECT * FROM %s LIMIT 10;" % key)
-            if len(data) == 0:
-                raise ValueError("Please insert at least one data in your table")
-            cols = data[0].keys()
-            df = pd.DataFrame(data, columns=cols)
-            df.to_csv(self.export_path + '/{}.csv'.format(key), index=False)
+            # TODO load csv
+            # data = self._execute_sql("SELECT * FROM %s;" % key)
+            # if len(data) == 0:
+            #     raise ValueError("Please insert at least one data in your table")
+            # cols = data[0].keys()
+            # df = pd.DataFrame(data, columns=cols)
+            # df.to_csv(self.__neo4j_export_path + '/{}.csv'.format(key), index=False)
 
-            query = "LOAD CSV FROM 'file:///{}.csv' AS row WITH ".format(key)
-            table_schema = self.execute_sql("show columns from %s;" % key)
+            # query = "LOAD CSV WITH HEADERS FROM 'file:///{}.csv' AS row WITH ".format(key)
+            query = "LOAD CSV WITH HEADERS FROM 'file:///{}.csv' AS row ".format(key)
+            table_schema = self._execute_sql("show columns from %s;" % key)
 
-            query += ", ".join("row[{}] AS {}".format(index, name['Field'])
-                               for index, name in enumerate(table_schema))
+            # query += ", ".join("row[{}] AS {}".format(index, name['Field'])
+            #                    for index, name in enumerate(table_schema))
 
             # get the primary key
-            primary_key = self.execute_sql("show columns from {} where `Key` = 'PRI';".format(key))
+            primary_key = self._execute_sql("show columns from {} where `Key` = 'PRI';".format(key))
             if len(primary_key) != 0:
                 primary_key = primary_key[0]['Field']
             else:
                 # raise ValueError("The table {} does not have primary key".format(key))
                 # if can not find primary key
-                primary_key = self.execute_sql("show columns from {};".format(key))[0]['Field']
+                primary_key = self._execute_sql("show columns from {};".format(key))[0]['Field']
 
             query += " MERGE ({}:{} ".format(str(key).lower(), key)
             query += "{"
-            query += "{}: {} ".format(primary_key, primary_key)
-            query += "}) SET "
-            # query += "MERGE ({}:{} {{}: {}}) SET ".format(str(key).lower(), key, primary_key, primary_key)
+            query += "{}: row.{}, ".format(primary_key, primary_key)
+
             del table_schema[0]
-            query += ", ".join("{}.{} = {}".format(str(key).lower(), name['Field'], name['Field'])
+            query += ", ".join("{}: coalesce(row.{}, \"Unknown\")".format(name['Field'], name['Field'])
                                for index, name in enumerate(table_schema))
+            query += "}); "
+            # query += "MERGE ({}:{} {{}: {}}) SET ".format(str(key).lower(), key, primary_key, primary_key)
+            # del table_schema[0]
+            # query += ", ".join("{}.{} = {}".format(str(key).lower(), name['Field'], name['Field'])
+            #                    for index, name in enumerate(table_schema))
             return query
 
         export_tables = self.read_relations()
@@ -197,7 +223,7 @@ class ConvertDB:
             key = list(table.keys())[0]
             if table[key] is None:
                 query = generate_cypher(key)
-                self.execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(key).lower(), key, str(key).lower()))
+                self._execute_cypher("MATCH ({}:{}) DETACH DELETE {};".format(str(key).lower(), key, str(key).lower()))
                 cypher_query.append(query)
             else:
                 # means it should have some relation, key means table name
@@ -212,42 +238,43 @@ class ConvertDB:
                 cypher_query.append(q1)
                 cypher_query.append(q2)
 
-                primary_key_t1 = self.execute_sql("show columns from {} where `Key` = 'PRI';".format(t1))
-                if len(primary_key_t1) != 0:
-                    primary_key_t1 = primary_key_t1[0]['Field']
+                # this is for other loading relation code not exist anymore
+                # primary_key_t1 = self._execute_sql("show columns from {} where `Key` = 'PRI';".format(t1))
+                # if len(primary_key_t1) != 0:
+                #     primary_key_t1 = primary_key_t1[0]['Field']
+                #
+                # primary_key_t2 = self._execute_sql("show columns from {} where `Key` = 'PRI';".format(t2))
+                # if len(primary_key_t1) != 0:
+                #     primary_key_t2 = primary_key_t2[0]['Field']
+                #
+                # data = self._execute_sql("SELECT {}.{}, {}.{} FROM {}, {} WHERE {}.{} = {}.{} LIMIT 10".
+                #                         format(t1, primary_key_t1, t2, primary_key_t2, t1, t2, t1, t1_on, t2, t2_on))
+                #
+                # cols = data[0].keys()
+                # df = pd.DataFrame(data, columns=cols)
+                # df.to_csv(self.__neo4j_export_path + '/{}_{}.csv'.format(t1, t2), index=False)
 
-                primary_key_t2 = self.execute_sql("show columns from {} where `Key` = 'PRI';".format(t2))
-                if len(primary_key_t1) != 0:
-                    primary_key_t2 = primary_key_t2[0]['Field']
+                # query = "LOAD CSV WITH HEADERS FROM 'file:///{}_{}.csv' AS row ".format(t1, t2)
 
-                data = self.execute_sql("SELECT {}.{}, {}.{} FROM {}, {} WHERE {}.{} = {}.{} LIMIT 10".
-                                        format(t1, primary_key_t1, t2, primary_key_t2, t1, t2, t1, t1_on, t2, t2_on))
+                query = "MATCH ({}:{}), ".format(str(t1).lower(), t1)
+                # query += "{"
+                #
+                # query += "{}: row.{}".format(primary_key_t1, primary_key_t1)
+                # query += "}) "
 
-                cols = data[0].keys()
-                df = pd.DataFrame(data, columns=cols)
-                df.to_csv(self.export_path + '/{}_{}.csv'.format(t1, t2), index=False)
-
-                query = "LOAD CSV WITH HEADERS FROM 'file:///{}_{}.csv' AS row ".format(t1, t2)
-
-                query += "MATCH ({}:{} ".format(str(t1).lower(), t1)
-                query += "{"
-
-                query += "{}: row.{}".format(primary_key_t1, primary_key_t1)
-                query += "}) "
-
-                query += "MATCH ({}:{} ".format(str(t2).lower(), t2)
-                query += "{"
-
-                query += "{}: row.{}".format(primary_key_t2, primary_key_t2)
-                query += "}) "
+                query += "({}:{}) ".format(str(t2).lower(), t2)
+                # query += "{"
+                #
+                # query += "{}: row.{}".format(primary_key_t2, primary_key_t2)
+                # query += "}) "
 
                 query += "MERGE ({})-[r:{}]->({})".format(str(t1).lower(), relation, str(t2).lower())
 
                 cypher_query.append(query)
-                self.execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(t1).lower(), t1, str(t1).lower()))
-                self.execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(t2).lower(), t2, str(t2).lower()))
+                self._execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(t1).lower(), t1, str(t1).lower()))
+                self._execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(t2).lower(), t2, str(t2).lower()))
 
         for cypher in cypher_query:
             print("Execute: {}".format(cypher))
-            self.execute_cypher(cypher)
+            # self._execute_cypher(cypher)
         print("Export finished!")

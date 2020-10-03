@@ -1,3 +1,4 @@
+import os
 import sys
 from moz_sql_parser import parse
 from utils.SQLParser import SQLParser
@@ -6,10 +7,11 @@ from configparser import ConfigParser, ParsingError, NoSectionError
 
 
 class CLI:
-    _config_path = "./conf/db.ini"
+    _config_path = "conf/db.ini"
 
     def __init__(self):
         self.config = self._load_config()
+        self.cb = self._load_convert()
 
     def _load_config(self):
         """
@@ -22,6 +24,20 @@ class CLI:
             return config
         except ParsingError as err:
             raise FileNotFoundError("Can not find config file in ./conf/db.ini")
+
+    def _load_convert(self):
+        try:
+            mysql_config = self.config["mysql"]
+            neo4j_config = self.config["neo4j"]
+        except NoSectionError as err:
+            print("Can not find the section {} in db.ini".format(err))
+            raise KeyError(err.section)
+        finally:
+            print("Something wrong with the config")
+
+        cb = ConvertDB(mysql_config['database_name'], mysql_config['username'], mysql_config['password'],
+                       neo4j_config['username'], neo4j_config['password'])
+        return cb
 
     @staticmethod
     def help():
@@ -54,17 +70,6 @@ class CLI:
                 cypher_password = "li1998"
         :return:
         """
-        try:
-            mysql_config = self.config["mysql"]
-            neo4j_config = self.config["neo4j"]
-        except NoSectionError as err:
-            print("Can not find the section {} in db.ini".format(err))
-            raise KeyError(err.section)
-        finally:
-            print("Something wrong with the config")
-
-        cb = ConvertDB(mysql_config['database_name'], mysql_config['username'], mysql_config['li19980812'],
-                       neo4j_config['cypher_user'], neo4j_config['cypher_password'])
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
-        cb.export_tables()
+        self.cb.export_tables()
