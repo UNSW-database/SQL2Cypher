@@ -185,7 +185,7 @@ function tick() {
         return 'translate(' + d.x + ',' + d.y + ')';
     });
     path_labels
-    .attr("x", function(d) {return (d.source.x + d.target.x) / 1.8})
+    .attr("x", function(d) {return (d.source.x + d.target.x) / 2})
     .attr("y", function(d) {return (d.source.y + d.target.y) / 2})
 
 }
