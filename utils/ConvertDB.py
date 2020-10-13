@@ -333,3 +333,8 @@ class ConvertDB:
             print("Execute: {}".format(cypher))
             # self._execute_cypher(cypher)
         print("Export finished!")
+
+        # after exporting the data then delete the csv files which cached in the neo4j directory
+        print("Start cleaning the cache file...")
+        for file in self.delete_files:
+            os.remove(file)
