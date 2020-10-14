@@ -1,5 +1,6 @@
 import sys
 import os
+from view import app
 
 # to add the module path
 PACKAGE_PARENT = '..'
@@ -12,9 +13,9 @@ from utils.CLI import CLI
 
 cli = CLI()
 # init the app for flask
-app = Flask(__name__,
-            template_folder=os.getcwd() + '/view/templates/',
-            static_folder=os.getcwd() + '/view/static/')
+# app = Flask(__name__,
+#             template_folder=os.getcwd() + '/view/templates/',
+#             static_folder=os.getcwd() + '/view/static/')
 
 
 @app.route('/')

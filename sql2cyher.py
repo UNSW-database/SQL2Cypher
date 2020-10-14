@@ -8,6 +8,8 @@ Description:
 import os
 import sys
 import argparse
+from view import app
+import view.route
 from utils.CLI import CLI
 
 if __name__ == '__main__':
@@ -46,6 +48,9 @@ if __name__ == '__main__':
 
     if args.clean_cache is not None:
         os.remove(os.getcwd() + '/cache/relation.pickle')
+
+    if args.web_ui:
+        app.run()
     # if len(sys.argv) > 2:
     #     print("Please have a look the help: python3 sql2cypher.py --help")
     #     exit()
