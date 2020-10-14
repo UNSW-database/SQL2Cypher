@@ -25,7 +25,7 @@ def index():
     for table in tables:
         table["reflexive"] = 'false'
     table_names = [table['id'] for table in tables]
-    relation = cli.cb.get_relations(only_table=True)
+    relation = cli.cb.get_mysql_relations(only_table=True)
 
     for name in table_names:
         temp = {}

@@ -5,10 +5,11 @@ import os
 import sys
 import time
 import pickle
+import psycopg2
 import pandas as pd
 import mysql.connector
 from mysql.connector import errorcode
-from neomodel import db,config
+from neomodel import db, config
 
 config.ENCRYPTED_CONNECTION = False
 
@@ -17,16 +18,13 @@ class ConvertDB:
     _neo4j_export_path = '/var/lib/neo4j/import'
     _cache_path = os.getcwd() + '/cache/'
 
-    def __init__(self, db, user, password, cypher_user, cypher_password, cypher_ip=None, ip=None):
+    def __init__(self, mysql_config, neo4j_config, psql_config, db_name):
         # self.__neo4j_export_path = None
-        self.db = db
-        self.user = user
+        self.db_name = db_name
         self.delete_files = []
-        self.password = password
-        self.cypher_user = cypher_user
-        self.cypher_password = cypher_password
-        self.ip = ip if ip is not None else "localhost"
-        self.cypher_ip = cypher_ip if cypher_ip is not None else "localhost"
+        self.mysql_config = mysql_config
+        self.neo4j_config = neo4j_config
+        self.psql_config = psql_config
 
     def _execute_cypher(self, query):
         """
@@ -35,8 +33,31 @@ class ConvertDB:
             db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
         :return:
         """
-        db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
+        db.set_connection('bolt://{}:{}@{}:{}'.format(self.neo4j_config['username'], self.neo4j_config['password'],
+                                                      self.neo4j_config['host'], self.neo4j_config['port']))
         db.cypher_query(query)
+
+    def _execute_psql(self, query, args=()):
+        """
+        execute psql
+        :param query: psql query
+        :param args: args
+        :return: tuples
+        """
+        try:
+            conn = psycopg2.connect(**self.psql_config)
+        except psycopg2.Error as err:
+            print("Connect failed")
+            raise ValueError("Check the config")
+
+        mycursor = conn.cursor()
+        mycursor.execute(query, args)
+        res = [dict((mycursor.description[idx][0], value)
+                    for idx, value in enumerate(row)) for row in mycursor.fetchall()]
+
+        conn.commit()
+        conn.close()
+        return res
 
     def _execute_sql(self, query, args=()):
         """
@@ -47,11 +68,7 @@ class ConvertDB:
         """
         try:
             mydb = mysql.connector.connect(
-                host=self.ip,
-                user=self.user,
-                password=self.password,
-                database=self.db,
-                auth_plugin='mysql_native_password'
+                **self.mysql_config
             )
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -93,11 +110,11 @@ class ConvertDB:
         """
         # get all the tables as a node
         tables = self._execute_sql("SELECT table_name as id FROM "
-                                  "information_schema.tables "
-                                  "where table_schema='{}';".format(self.db))
+                                   "information_schema.tables "
+                                   "where table_schema='{}';".format(self.mysql_config['database']))
         return tables
 
-    def get_relations(self, only_table=False):
+    def get_mysql_relations(self, only_table=False):
         """
         get all the relationship between tables
         :return: array of relations
@@ -111,6 +128,30 @@ class ConvertDB:
         relation_tables = self._execute_sql(query)
 
         return relation_tables
+
+    def get_psql_relations(self, only_table=False):
+        """
+        get the table relationship
+        :param only_table:
+        :return:
+        """
+        query = """
+        SELECT
+            tc.table_name as "TABLE_NAME", 
+            kcu.column_name as "COLUMN_NAME", 
+            ccu.table_name AS "REFERENCED_TABLE_NAME",
+            ccu.column_name AS "REFERENCED_COLUMN_NAME" 
+        FROM 
+            information_schema.table_constraints AS tc 
+            JOIN information_schema.key_column_usage AS kcu
+              ON tc.constraint_name = kcu.constraint_name
+              AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage AS ccu
+              ON ccu.constraint_name = tc.constraint_name
+              AND ccu.table_schema = tc.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY';
+        """
+        return self._execute_psql(query)
 
     def read_relations(self):
         """
@@ -129,10 +170,15 @@ class ConvertDB:
         """
         # get all the tables
         filepath = self._cache_path + "/relation.pickle"
-        all_table = self._execute_sql("SHOW TABLES;")
+        database = self.psql_config['database'] if self.db_name == 'psql' else self.mysql_config['database']
+
+        # execute different sql query for select tables
+        all_table = self._execute_sql("SHOW TABLES;") if self.db_name != 'psql' else \
+            self._execute_psql("SELECT table_name as \"Tables_in_{}\" FROM information_schema.tables "
+                                           "WHERE table_schema = 'public';".format(self.psql_config['database']))
         tables = []
         for t in all_table:
-            tables.append(t['Tables_in_{}'.format(self.db)])
+            tables.append(t['Tables_in_{}'.format(database)])
 
         # all the relations which stored in pickle
         data = self._load_pickle()
@@ -144,7 +190,7 @@ class ConvertDB:
         visited_tables = set()
 
         # read the relationship between tables
-        relation_tables = self.get_relations()
+        relation_tables = self.get_mysql_relations() if self.db_name != 'psql' else self.get_psql_relations()
         for rt in relation_tables:
             label = input(
                 "Please enter the relation between {}->{}: ".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']))
@@ -166,12 +212,11 @@ class ConvertDB:
         # add the single table
         for table in tables:
             if table not in visited_tables:
-                print(table)
                 relationship[table] = None
 
         # now try to solve the relation to pickle
         # print(relation)
-        relation[self.db] = relationship
+        relation[database] = relationship
         files = open(filepath, "wb")
         pickle.dump(relation, files)
 
@@ -190,22 +235,12 @@ class ConvertDB:
         df.to_csv(filepath, index=False)
 
         query = "LOAD CSV WITH HEADERS FROM 'file:///{}.csv' AS row ".format(table_name)
-        table_schema = self._execute_sql("show columns from %s;" % table_name)
-
-        # get the primary key
-        primary_key = self._execute_sql("show columns from {} where `Key` = 'PRI';".format(table_name))
-        if len(primary_key) != 0:
-            primary_key = primary_key[0]['Field']
-        else:
-            # raise ValueError("The table {} does not have primary key".format(key))
-            # if can not find primary key
-            primary_key = self._execute_sql("show columns from {};".format(table_name))[0]['Field']
+        table_schema = self._execute_sql("show columns from %s;" % table_name) if self.db_name != 'psql' else \
+            self._execute_psql("select column_name as \"Field\" "
+                               "from information_schema.columns where table_name = {}".format(table_name))
 
         query += " MERGE ({}:{} ".format(str(table_name).lower(), table_name)
         query += "{"
-        query += "{}: row.{}, ".format(primary_key, primary_key)
-
-        del table_schema[0]
         query += ", ".join("{}: coalesce(row.{}, \"Unknown\")".format(name['Field'], name['Field'])
                            for index, name in enumerate(table_schema))
         query += "}); "
@@ -263,7 +298,7 @@ class ConvertDB:
         sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
         sys.stdout.flush()
 
-    def export_tables(self):
+    def exporting(self):
         """
         export the table data into csv ready to load into database by using two methods
         1. load csv,
@@ -271,13 +306,15 @@ class ConvertDB:
         :return:
         """
 
+        execute_query = self._execute_sql if self.db_name != 'psql' else self._execute_psql
+        start = time.time()
         export_tables = self.read_relations()
         cypher_query = []
         # to record whether the tables data already converted
         exported = []
         print("Starting export csv files for TABLES! Please wait for a while ...")
 
-        print(export_tables)
+        # print(export_tables)
         # table is the key name
         for table in export_tables:
             if export_tables[table] is None:
@@ -299,7 +336,7 @@ class ConvertDB:
                 # means it should have some relation, key means table name
                 src = table
                 if src not in exported:
-                    src_data = self._execute_sql("SELECT * FROM %s;" % src)
+                    src_data = execute_query("SELECT * FROM %s;" % src)
                     result = self._isvalid_load(src, src_data)
                     if result is not None:
                         cypher_query.append(result)
@@ -313,7 +350,7 @@ class ConvertDB:
                     label = t['label']
 
                     if dst not in exported:
-                        dst_data = self._execute_sql("SELECT * FROM %s;" % dst)
+                        dst_data = execute_query("SELECT * FROM %s;" % dst)
                         result = self._isvalid_load(dst, dst_data)
                         if result is not None:
                             cypher_query.append(result)
@@ -338,3 +375,6 @@ class ConvertDB:
         print("Start cleaning the cache file...")
         for file in self.delete_files:
             os.remove(file)
+
+        end = time.time()
+        print("Cost {:2}s to exporting".format(round(float(end - start)), 2))

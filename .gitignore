@@ -142,6 +142,10 @@ dmypy.json
 # profiling data
 .prof
 
+.idea
+
+cache
+
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
