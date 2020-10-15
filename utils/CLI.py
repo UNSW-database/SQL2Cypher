@@ -1,5 +1,6 @@
 import os
 import sys
+from utils.Logger import Logger
 from moz_sql_parser import parse
 from utils.SQLParser import SQLParser
 from utils.ConvertDB import ConvertDB
@@ -10,6 +11,8 @@ class CLI:
     _config_path = "conf/db.ini"
 
     def __init__(self, db_name='mysql'):
+        # init the logger
+        self.logger = Logger()
         self.config = self._load_config()
         self.cb = self._load_convert(db_name)
 
@@ -19,22 +22,24 @@ class CLI:
         :return: the config Parser
         """
         try:
+            self.logger.warning("starting get the config file in ./conf/db.ini")
             config = ConfigParser()
             config.read(self._config_path)
             return config
         except ParsingError as err:
+            self.logger.error("Can not find the config file in ./conf/db.ini")
             raise FileNotFoundError("Can not find config file in ./conf/db.ini")
 
     def _load_convert(self, db_name):
         try:
+            self.logger.warning("Start getting the database config info")
             psql_config = self.config["psql"] if db_name == 'psql' else None
             mysql_config = self.config["mysql"] if db_name == 'mysql' else None
             neo4j_config = self.config["neo4j"]
         except NoSectionError as err:
+            self.logger.error("Can not find the config of {}".format(err.section))
             print("Can not find the section {} in db.ini".format(err))
             raise KeyError(err.section)
-        finally:
-            print("Extract the config file")
 
         MySQLConfig = {
             'host': mysql_config['host'],
@@ -58,7 +63,7 @@ class CLI:
             'password': neo4j_config['password']
         }
 
-        cb = ConvertDB(MySQLConfig, NEO4jConfig, PSQLConfig, db_name)
+        cb = ConvertDB(MySQLConfig, NEO4jConfig, PSQLConfig, db_name, self.logger)
         return cb
 
     @staticmethod

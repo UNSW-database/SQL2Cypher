@@ -10,6 +10,8 @@ import pandas as pd
 import mysql.connector
 from mysql.connector import errorcode
 from neomodel import db, config
+from psycopg2 import OperationalError, errorcodes, errors
+
 
 config.ENCRYPTED_CONNECTION = False
 
@@ -17,14 +19,27 @@ config.ENCRYPTED_CONNECTION = False
 class ConvertDB:
     _neo4j_export_path = '/var/lib/neo4j/import'
     _cache_path = os.getcwd() + '/cache/'
+    _output_path = '/tmp/sql2cypher'
 
-    def __init__(self, mysql_config, neo4j_config, psql_config, db_name):
+    def __init__(self, mysql_config, neo4j_config, psql_config, db_name, logger):
         # self.__neo4j_export_path = None
         self.db_name = db_name
         self.delete_files = []
         self.mysql_config = mysql_config
         self.neo4j_config = neo4j_config
         self.psql_config = psql_config
+        # to make sure the output directory is correct
+        self._ensure_directory()
+        self.logger = logger
+
+    def _ensure_directory(self):
+        """
+        to make sure all the directories are valid
+        :return: nothing
+        """
+        if not os.path.isdir(self._output_path):
+            self.logger.warning("Create directory: {}".format(self._output_path))
+            os.mkdir(self._output_path)
 
     def _execute_cypher(self, query):
         """
@@ -33,9 +48,27 @@ class ConvertDB:
             db.set_connection('bolt://{}:{}@{}:7687'.format(self.cypher_user, self.cypher_password, self.cypher_ip))
         :return:
         """
-        db.set_connection('bolt://{}:{}@{}:{}'.format(self.neo4j_config['username'], self.neo4j_config['password'],
-                                                      self.neo4j_config['host'], self.neo4j_config['port']))
-        db.cypher_query(query)
+        try:
+            db.set_connection('bolt://{}:{}@{}:{}'.format(self.neo4j_config['username'], self.neo4j_config['password'],
+                                                          self.neo4j_config['host'], self.neo4j_config['port']))
+            db.cypher_query(query)
+        except Exception as error:
+            print("Can not connect the neo4j, please check the services and config")
+            self.logger.error("Can not connect the neo4j, please check the services and config")
+            raise IOError("Something error")
+
+    def _extract_sql_result(self, cursor, query, args=()):
+        """
+        due to mysql and  psql have same steps when executing the query then put one function
+        :param query:
+        :param args:
+        :return:
+        """
+        cursor.execute(query, args)
+        res = [dict((cursor.description[idx][0], value)
+                    for idx, value in enumerate(row)) for row in cursor.fetchall()]
+
+        return res
 
     def _execute_psql(self, query, args=()):
         """
@@ -46,14 +79,13 @@ class ConvertDB:
         """
         try:
             conn = psycopg2.connect(**self.psql_config)
-        except psycopg2.Error as err:
-            print("Connect failed")
+        except OperationalError as err:
+            print("psql error: ", err)
+            self.logger.error("psql error")
+            self.logger.error("psql extensions.Diagnostics: " + err.diag)
             raise ValueError("Check the config")
 
-        mycursor = conn.cursor()
-        mycursor.execute(query, args)
-        res = [dict((mycursor.description[idx][0], value)
-                    for idx, value in enumerate(row)) for row in mycursor.fetchall()]
+        res = self._extract_sql_result(conn.cursor(), query, args)
 
         conn.commit()
         conn.close()
@@ -72,17 +104,15 @@ class ConvertDB:
             )
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                self.logger.error("mysql Something is wrong with your user name or password!")
                 raise ValueError("Something is wrong with your user name or password!")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                self.logger.error("mysql Database dose not exist!")
                 raise IOError("Database dose not exist!")
             else:
                 raise ValueError("err")
 
-        mycursor = mydb.cursor()
-
-        mycursor.execute(query, args)
-        res = [dict((mycursor.description[idx][0], value)
-                    for idx, value in enumerate(row)) for row in mycursor.fetchall()]
+        res = self._extract_sql_result(mydb.cursor(), query, args)
 
         mydb.commit()
         mydb.close()
@@ -100,6 +130,7 @@ class ConvertDB:
             if type(data) is list:
                 return data
         except FileNotFoundError:
+            self.logger.warning("relationship cache does not exist")
             return None
         return None
 
@@ -312,7 +343,8 @@ class ConvertDB:
         cypher_query = []
         # to record whether the tables data already converted
         exported = []
-        print("Starting export csv files for TABLES! Please wait for a while ...")
+        print("Starting export csv files for tables! Please wait for a while ...")
+        self.logger.warning("Start exporting the {} database to graph database".format(self.db_name))
 
         # print(export_tables)
         # table is the key name
@@ -370,11 +402,14 @@ class ConvertDB:
             print("Execute: {}".format(cypher))
             # self._execute_cypher(cypher)
         print("Export finished!")
+        self.logger.warning("Export finished {} database to graph database".format(self.db_name))
 
         # after exporting the data then delete the csv files which cached in the neo4j directory
+        self.logger.warning("Start cleaning the cache file... for {} database".format(self.db_name))
         print("Start cleaning the cache file...")
         for file in self.delete_files:
             os.remove(file)
 
         end = time.time()
+        self.logger.warning("Cost {:2}s to exporting {} database".format(round(float(end - start)), 2), self.db_name)
         print("Cost {:2}s to exporting".format(round(float(end - start)), 2))
