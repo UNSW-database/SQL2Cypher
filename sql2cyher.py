@@ -21,11 +21,11 @@ if __name__ == '__main__':
     parser.add_argument('--migrate', '-m', action="store_true", help="Migrate RDBMS to Graph database")
     parser.add_argument('--output', '-o', action="store_true", help="Output the cypher query without executing")
     parser.add_argument('--web_ui', '-web', action="store_true", help="Start the web ui model")
+    parser.add_argument('--clean_cache', '-cc', action="store_true", help="To clean the cache information")
     parser.add_argument('--database', '-db', help="The specific relational database(mysql or psql). "
                                                   "The default value is mysql")
     parser.add_argument('--load_method', '-lm', help="The load method, provide csv and cypher. "
                                                      "The default method is csv and cypher together")
-    parser.add_argument('--clean_cache', '-cc', help="To clean the cache information")
 
     args = parser.parse_args()
 
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     if args.clean_cache is not None:
         os.remove(os.getcwd() + '/cache/relation.pickle')
         os.rmdir(os.getcwd() + '/data')
+        print("Clean all the cache and temp files")
 
     if args.web_ui:
         app.run()
