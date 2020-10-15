@@ -38,18 +38,20 @@ if __name__ == '__main__':
         db_name = 'mysql'
         if db is not None and db in supports:
             db_name = db
-        print(db_name)
-        cli = CLI(db_name=db_name)
+        output = args.output
+        cli = CLI(output, db_name=db_name)
         cli.convert_db()
         sys.exit()
 
     if args.translate:
-        cli = CLI()
+        output = args.output
+        cli = CLI(output)
         cli.transfer_sql()
         sys.exit()
 
     if args.clean_cache is not None:
         os.remove(os.getcwd() + '/cache/relation.pickle')
+        os.rmdir(os.getcwd() + '/data')
 
     if args.web_ui:
         app.run()

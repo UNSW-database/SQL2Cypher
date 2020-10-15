@@ -11,7 +11,7 @@ from flask import Flask, render_template
 from utils.CLI import CLI
 
 
-cli = CLI()
+cli = CLI(False)
 # init the app for flask
 # app = Flask(__name__,
 #             template_folder=os.getcwd() + '/view/templates/',

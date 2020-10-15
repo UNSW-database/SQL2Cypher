@@ -20,7 +20,7 @@ class From(AbsSQL):
             pass
 
     def load_relation(self):
-        filepath = os.getcwd() + "/data/relation.pickle"
+        filepath = os.getcwd() + "/cache/relation.pickle"
         try:
             files = open(filepath, "rb")
             data = pickle.load(files)

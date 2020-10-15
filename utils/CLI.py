@@ -10,11 +10,14 @@ from configparser import ConfigParser, ParsingError, NoSectionError
 class CLI:
     _config_path = "conf/db.ini"
 
-    def __init__(self, db_name='mysql'):
+    def __init__(self, output, db_name='mysql'):
         # init the logger
+        self.db_name = db_name
+        # to declare whether output the cypher query
+        self.output = output
         self.logger = Logger()
-        self.config = self._load_config()
-        self.cb = self._load_convert(db_name)
+        self.config = None
+        self.cb = None
 
     def _load_config(self):
         """
@@ -62,8 +65,8 @@ class CLI:
             'username': neo4j_config['username'],
             'password': neo4j_config['password']
         }
-
-        cb = ConvertDB(MySQLConfig, NEO4jConfig, PSQLConfig, db_name, self.logger)
+        print()
+        cb = ConvertDB(MySQLConfig, NEO4jConfig, PSQLConfig, db_name, self.logger, self.output)
         return cb
 
     @staticmethod
@@ -99,4 +102,6 @@ class CLI:
         """
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
+        self.config = self._load_config()
+        self.cb = self._load_convert(self.db_name)
         self.cb.exporting()

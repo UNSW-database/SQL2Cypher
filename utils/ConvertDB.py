@@ -19,27 +19,30 @@ config.ENCRYPTED_CONNECTION = False
 class ConvertDB:
     _neo4j_export_path = '/var/lib/neo4j/import'
     _cache_path = os.getcwd() + '/cache/'
-    _output_path = '/tmp/sql2cypher'
+    _output_path = os.getcwd() + '/data'
 
-    def __init__(self, mysql_config, neo4j_config, psql_config, db_name, logger):
+    def __init__(self, mysql_config, neo4j_config, psql_config, db_name, logger, output):
         # self.__neo4j_export_path = None
+        self.logger = logger
+        # if only output then just output the result
+        self.output = output
         self.db_name = db_name
         self.delete_files = []
         self.mysql_config = mysql_config
         self.neo4j_config = neo4j_config
         self.psql_config = psql_config
         # to make sure the output directory is correct
-        self._ensure_directory()
-        self.logger = logger
+        self._ensure_directory(self._output_path)
+        self._ensure_directory(self._cache_path)
 
-    def _ensure_directory(self):
+    def _ensure_directory(self, path):
         """
         to make sure all the directories are valid
         :return: nothing
         """
-        if not os.path.isdir(self._output_path):
-            self.logger.warning("Create directory: {}".format(self._output_path))
-            os.mkdir(self._output_path)
+        if not os.path.isdir(path):
+            self.logger.warning("Create directory: {}".format(path))
+            os.mkdir(path)
 
     def _execute_cypher(self, query):
         """
@@ -133,6 +136,17 @@ class ConvertDB:
             self.logger.warning("relationship cache does not exist")
             return None
         return None
+
+    def _export_file(self, filename, data):
+        """
+        export the cypher data to files
+        :param filename: output file name
+        :param data: output data
+        :return: nothing
+        """
+        with open(self._output_path + "/{}.cypher".format(filename), 'a+') as f:
+            for query in data:
+                f.write(query + "\n")
 
     def get_tables(self):
         """
@@ -293,6 +307,13 @@ class ConvertDB:
                 col in row)
             query += "});"
             self._progress(index, total, status='Generating cypher query for table: {}'.format(table_name))
+
+            # write to file
+            if self.output:
+                self._export_file(table_name, [query])
+            else:
+                pass
+                # db.run(query)
             # db.run(query)
             # print(query)
 
@@ -304,7 +325,7 @@ class ConvertDB:
         """
         if len(data) == 0:
             raise ValueError("Please insert at least one data in your table")
-        if len(data) >= 100000:
+        if len(data) >= 100000 or self.output:
             self._execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(table_name).lower(),
                                                                          table_name, str(table_name).lower()))
             self._load_with_cypher(table_name, data)
@@ -358,8 +379,8 @@ class ConvertDB:
                 # remove the old data firstly
                 self._execute_cypher(
                     "MATCH ({}:{}) DETACH DELETE {};".format(str(table).lower(), table, str(table).lower()))
-                # if the dataset is too large then use cypher query to load
-                if len(data) >= 100000:
+                # if the dataset is too large then use cypher query to load or output only
+                if len(data) >= 100000 or self.output:
                     self._load_with_cypher(table, data)
                 else:
                     query = self._load_with_csv(table, data)
@@ -395,12 +416,15 @@ class ConvertDB:
 
                     cypher_query.append(query)
 
-        # add progress bar in the terminal
-        total = len(cypher_query)
-        for index, cypher in enumerate(cypher_query):
-            self._progress(index, total, status='Execute cypher query')
-            print("Execute: {}".format(cypher))
-            # self._execute_cypher(cypher)
+        if self.output:
+            self._export_file("relationship", cypher_query)
+        else:
+            # add progress bar in the terminal
+            total = len(cypher_query)
+            for index, cypher in enumerate(cypher_query):
+                self._progress(index, total, status='Execute cypher query')
+                print("Execute: {}".format(cypher))
+                # self._execute_cypher(cypher)
         print("Export finished!")
         self.logger.warning("Export finished {} database to graph database".format(self.db_name))
 
