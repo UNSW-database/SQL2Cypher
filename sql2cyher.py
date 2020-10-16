@@ -16,7 +16,7 @@ from utils.CLI import CLI
 if __name__ == '__main__':
     # set the command line
     parser = argparse.ArgumentParser(description="Welcome to use sql2cypher for managing your database",
-                                     epilog="Enjoy the sql2cypher")
+                                     epilog="Enjoy the sql2cypher 🙂")
     parser.add_argument('--translate', '-t', action="store_true", help="Translate SQL query to Cypher query")
     parser.add_argument('--migrate', '-m', action="store_true", help="Migrate RDBMS to Graph database")
     parser.add_argument('--output', '-o', action="store_true", help="Output the cypher query without executing")
