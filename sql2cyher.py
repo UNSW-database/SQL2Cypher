@@ -12,9 +12,9 @@ from view import app
 import view.route
 from utils.CLI import CLI
 
+
 if __name__ == '__main__':
-    # sql = "SELECT company.* FROM Company as company;"
-    # get the command line
+    # set the command line
     parser = argparse.ArgumentParser(description="Welcome to use sql2cypher for managing your database",
                                      epilog="Enjoy the sql2cypher")
     parser.add_argument('--translate', '-t', action="store_true", help="Translate SQL query to Cypher query")
@@ -24,14 +24,16 @@ if __name__ == '__main__':
     parser.add_argument('--clean_cache', '-cc', action="store_true", help="To clean the cache information")
     parser.add_argument('--database', '-db', help="The specific relational database(mysql or psql). "
                                                   "The default value is mysql")
-    parser.add_argument('--load_method', '-lm', help="The load method, provide csv and cypher. "
-                                                     "The default method is csv and cypher together")
+    parser.add_argument('--load_method', '-lm', help="The load method, provide csv and cypher."
+                                                     "The default method is csv and cypher together.")
 
     args = parser.parse_args()
 
     if len(sys.argv) < 2:
+        # invalid command and args
         parser.print_help()
         sys.exit()
+
     supports = ['mysql', 'psql']
     if args.migrate:
         db = args.database
