@@ -51,13 +51,13 @@ if __name__ == '__main__':
         cli.transfer_sql()
         sys.exit()
 
-    if args.clean_cache is not None:
-        os.remove(os.getcwd() + '/cache/relation.pickle')
-        os.rmdir(os.getcwd() + '/data')
-        print("Clean all the cache and temp files")
+    # if args.clean_cache is not None:
+    #     os.remove(os.getcwd() + '/cache/relation.pickle')
+    #     os.rmdir(os.getcwd() + '/data')
+    #     print("Clean all the cache and temp files")
 
     if args.web_ui:
-        app.run()
+        app.run(debug=True)
     # if len(sys.argv) > 2:
     #     print("Please have a look the help: python3 sql2cypher.py --help")
     #     exit()

@@ -19,7 +19,7 @@ class CLI:
         self.config = None
         self.cb = None
 
-    def _load_config(self):
+    def load_config(self):
         """
         load the config file. Set it as private function
         :return: the config Parser
@@ -33,7 +33,7 @@ class CLI:
             self.logger.error("Can not find the config file in ./conf/db.ini")
             raise FileNotFoundError("Can not find config file in ./conf/db.ini")
 
-    def _load_convert(self, db_name):
+    def load_convert(self, db_name):
         try:
             self.logger.warning("Start getting the database config info")
             psql_config = self.config["psql"] if db_name == 'psql' else None
@@ -102,6 +102,6 @@ class CLI:
         """
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
-        self.config = self._load_config()
-        self.cb = self._load_convert(self.db_name)
+        self.config = self.load_config()
+        self.cb = self.load_convert(self.db_name)
         self.cb.exporting()

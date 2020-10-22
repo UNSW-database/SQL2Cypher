@@ -11,7 +11,6 @@ from flask import Flask, render_template
 from utils.CLI import CLI
 
 
-cli = CLI(False)
 # init the app for flask
 # app = Flask(__name__,
 #             template_folder=os.getcwd() + '/view/templates/',
@@ -22,6 +21,10 @@ cli = CLI(False)
 @app.route('/index')
 def index():
     links = []
+    cli = CLI(False, db_name='mysql')
+    cli.config = cli.load_config()
+    cli.cb = cli.load_convert(cli.db_name)
+
     tables = cli.cb.get_tables()
     for table in tables:
         table["reflexive"] = 'false'
