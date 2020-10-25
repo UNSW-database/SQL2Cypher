@@ -19,7 +19,7 @@ class CLI:
         self.config = None
         self.cb = None
 
-    def load_config(self):
+    def _load_config(self):
         """
         load the config file. Set it as private function
         :return: the config Parser
@@ -33,7 +33,7 @@ class CLI:
             self.logger.error("Can not find the config file in ./conf/db.ini")
             raise FileNotFoundError("Can not find config file in ./conf/db.ini")
 
-    def load_convert(self, db_name):
+    def _load_convert(self, db_name):
         try:
             self.logger.warning("Start getting the database config info")
             psql_config = self.config["psql"] if db_name == 'psql' else None
@@ -70,14 +70,6 @@ class CLI:
         return cb
 
     @staticmethod
-    def help():
-        print("Usage sql2cypher [options]\n"
-              "Listing of options: \n"
-              "\t-s\t\tConvert sample sql into cypher\n"
-              "\t-c\t\tConvert the mysql database into cypher\n"
-              "")
-
-    @staticmethod
     def transfer_sql():
         """
         transfer the sql to cypher
@@ -89,6 +81,14 @@ class CLI:
             sql_parser = SQLParser()
             sql_parser.generate_cypher(parse(sql), sql)
             print(sql_parser.get_cypher())
+
+    def load_web_conf(self):
+        """
+        load the config file for the web server
+        :return:
+        """
+        self.config = self._load_config()
+        self.cb = self._load_convert(self.db_name)
 
     def convert_db(self):
         """
@@ -102,6 +102,6 @@ class CLI:
         """
         # print(cb.execute_sql("show tables", ()))
         # cb.read_relations()
-        self.config = self.load_config()
-        self.cb = self.load_convert(self.db_name)
+        self.config = self._load_config()
+        self.cb = self._load_convert(self.db_name)
         self.cb.exporting()
