@@ -82,7 +82,9 @@ def Config():
         print(request.form.get('type'))
         parser.set(request.form.get('type'), 'host', request.form.get('host'))
         parser.set(request.form.get('type'), 'port', request.form.get('port'))
-        parser.set(request.form.get('type'), 'database', request.form.get('database'))
+        # neo4j does not have database type
+        if request.form.get('type') != "neo4j":
+            parser.set(request.form.get('type'), 'database', request.form.get('database'))
         parser.set(request.form.get('type'), 'password', request.form.get('password'))
 
         try:
@@ -110,7 +112,8 @@ def Config():
 
 
 @app.route('/sql2cypher')
-def SQLTOCYPHER():
+def Code():
+
     return render_template('code.html')
 
 

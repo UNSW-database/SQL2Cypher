@@ -26,13 +26,31 @@
 <!--    </div>-->
       <div class="layui-container">
         <!-- 内容主体区域 -->
-        <div style="padding: 15px;">
-          <h3>Drag for relationships:</h3>
+        <div class="layui-row">
+          <div class="layui-col-md8">
+            <div style="padding: 15px;">
+              <h3>Drag for relationships:</h3>
+            </div>
+
+            <div id="myGraph"></div>
+            <button type="button" class="layui-btn layui-btn-primary">SUBMIT</button>
+            <button type="button" class="layui-btn layui-btn-primary" onclick="help_info()">HELP</button>
+          </div>
+          <div class="layui-col-md4">
+              <div>
+                <h2 style="color: #2e6c80;">How to use the SQL2Cypher:</h2>
+                <p><img src="../static/images/mouse-left-button.png" alt="" width="40" height="40" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>
+                <div style="margin-top: 10px">After selecting a node you can&nbsp;<span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">drag</span>&nbsp;an edge to connect with another node.</div>
+                <div style="margin-top: 10px">After the mouse left click, the following operations are provided:</div>
+                <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">C</span>&nbsp;button to change the edge's label information.</div>
+                <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">B</span> button to set link direction to both left and right.</div>
+                <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">L</span> button to set link direction to left only.</div>
+                <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">R</span> button to toggle node reflexivity.</div>
+                <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Delete</span>&nbsp;button to delete the edges or nodes;<strong>&nbsp;</strong></div>
+              </div>
+          </div>
         </div>
 
-        <div id="myGraph"></div>
-        <button type="button" class="layui-btn layui-btn-primary">SUBMIT</button>
-        <button type="button" class="layui-btn layui-btn-primary" onclick="help_info()">HELP</button>
       </div>
 
   </div>
@@ -42,17 +60,18 @@
   <script src="../static/js/d3.v3.min.js"></script>
 <!--  <script src="../static/js/graph.js"></script>-->
   <script>
-    if (JSON.parse('{{config | tojson}}') === true) {
+    if (JSON.parse('{{config | tojson}}') !== true) {
       function help_info() {
-          let msg = "<div style='padding: 10px;margin: 5px'>You can drag a line between nodes to add relation.<br><br>";
-          msg += "You can select the link between nodes, after selected the link will become a dotted line.<br><br>\n";
-          msg += "<dl>After selected, you can do some operations:<br><br>\n" +
-                  "<dd>Type 'c' to change the label text.</dd>" +
-                  "<dd>Type 'b' to set link direction to both left and right.</dd>" +
-                  "<dd>Type 'L' to set link direction to left only.</dd>" +
-                  "<dd>Type 'r' to toggle node reflexivity.</dd>" +
-                  "</dl>" +
-                  "</div>"
+          let msg = "<div style='margin: 20px'>";
+          msg += "<h2 style=\"color: #2e6c80;\">How to use the SQL2Cypher:</h2>\n" +
+              "                <p><img src=\"../static/images/mouse-left-button.png\" alt=\"\" width=\"40\" height=\"40\" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>\n" +
+              "                <div style=\"margin-top: 10px\">After selecting a node you can&nbsp;<span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">drag</span>&nbsp;an edge to connect with another node.</div>\n" +
+              "                <div style=\"margin-top: 10px\">After the mouse left click, the following operations are provided:</div>\n" +
+              "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">C</span>&nbsp;button to change the edge's label information.</div>\n" +
+              "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">B</span> button to set link direction to both left and right.</div>\n" +
+              "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">L</span> button to set link direction to left only.</div>\n" +
+              "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">R</span> button to toggle node reflexivity.</div>\n" +
+              "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">Delete</span>&nbsp;button to delete the edges or nodes;<strong>&nbsp;</strong></div>"+ "</div>";
           layer.open({
             type: 1
             ,content: msg
@@ -69,7 +88,7 @@
    * Created by telefont on 05/01/15.
    */
   // set up SVG for D3
-  let width  = 960,
+  let width  = 765,
       height = 500,
       colors = d3.scale.category10();
 

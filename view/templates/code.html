@@ -32,16 +32,30 @@
 
       <div class="layui-container">
           <!-- 内容主体区域 -->
-          <div style="padding: 15px;">
-            <h3>SQL QUERY CODE:</h3>
+          <div class="layui-row">
+              <div class="layui-col-md5">
+                  <div style="padding: 15px;">
+                    <h3>SQL QUERY CODE:</h3>
+                  </div>
+                  <textarea id="code" name="code" style="display: none; border-width:2px; border-style: dashed; border-color:black;">SELECT * FROM XX;</textarea>
+
+              </div>
+
+              <div class="layui-col-md1">
+                  <div style="padding: 40px;"></div>
+                  <button type="button" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon"></i></button>
+                  <button type="button" id="clear" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon"></i></button>
+              </div>
+
+              <div class="layui-col-md5">
+                  <div style="padding: 15px;">
+                    <h3>CYPHER QUERY CODE:</h3>
+                  </div>
+                  <textarea id="cypher" name="code" style="display: none;"></textarea>
+              </div>
           </div>
-          <textarea id="code" name="code" style="display: none;">SELECT * FROM XX;</textarea>
-          <button type="button" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon"></i></button>
-          <button type="button" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon"></i></button>
-          <div style="padding: 15px;">
-            <h3>CYPHER QUERY CODE:</h3>
-          </div>
-          <textarea id="cypher" name="code" style="display: none;"></textarea>
+
+
 
 
 <!--    add code mirror    -->
@@ -60,11 +74,6 @@
 
     });
 
-    layui.use('jquery', function (){
-        let $ = layui.$;
-        console.log($("#code").val());
-    });
-
     var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
         mode: "text/x-mysql",
@@ -75,7 +84,7 @@
           countries: ["name", "population", "size"]
         }},
         autofocus: true,
-        matchBrackets: true
+        matchBrackets: true,
     });
 
     editor.addKeyMap({
@@ -111,6 +120,15 @@
             cm.replaceRange('()', cur, cur, '+insert')
             cm.doc.setCursor({ line: cur.line, ch: cur.ch + 1 })
         }
+    });
+
+
+    layui.use('jquery', function (){
+        let $ = layui.$;
+        $("#clear").on('click', function (data){
+            editor.setValue("");
+            cypher_editor.setValue("");
+        })
     });
 
   </script>

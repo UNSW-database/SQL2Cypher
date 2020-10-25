@@ -38,7 +38,7 @@
               <label class="layui-form-label">Port</label>
               <div class="layui-input-inline">
                 <label>
-                  <input type="number" name="port" required autocomplete="off" placeholder="Port for database" class="layui-input">
+                  <input type="number" id="port" name="port" required autocomplete="off" value="3306" placeholder="Port for database" class="layui-input">
                 </label>
               </div>
             </div>
@@ -47,9 +47,10 @@
           <div class="layui-form-item">
             <label class="layui-form-label">Type</label>
             <div class="layui-input-block">
-              <select name="type" lay-filter="aihao">
-                <option value="mysql">mysql</option>
+              <label for="type"></label><select name="type" id="type" lay-filter="type">
+                <option value="mysql" selected>mysql</option>
                 <option value="psql">psql</option>
+                <option value="neo4j">neo4j</option>
               </select>
             </div>
           </div>
@@ -59,7 +60,7 @@
             <label class="layui-form-label">Database</label>
             <div class="layui-input-block">
               <label>
-                <input type="text" name="database" required  placeholder="Database" autocomplete="off" class="layui-input">
+                <input type="text" id="database" name="database" required  placeholder="Database" autocomplete="off" class="layui-input">
               </label>
             </div>
           </div>
@@ -120,10 +121,26 @@
   <script src="../static/js/d3.v3.min.js"></script>
 <!--  <script src="../static/js/graph.js"></script>-->
   <script>
-    layui.use(['form', 'element'], function(){
+    layui.use(['form', 'element', 'layer', 'jquery'], function(){
         var form = layui.form
+          ,$ = layui.jquery
           ,layer = layui.layer
           ,element = layui.element;
+
+
+          form.on('select(type)', function (data){
+              if (data.value === "mysql") {
+                  $("#port").val(3306);
+                  $("#database").removeAttr('disabled');
+              } else if (data.value === "psql") {
+                  $("#port").val(5432);
+                  $("#database").removeAttr('disabled');
+              } else {
+                  $("#port").val(7687);
+                  $("#database").attr('disabled', 'disabled');
+              }
+          });
+
 
           form.on('switch(switchTest)', function(data){
             layer.msg('Output only：'+ (this.checked ? 'true' : 'false'), {
@@ -132,7 +149,7 @@
             layer.tips('If switch on then the cypher will be not be executed, which will be stored into /data/ folder. Otherwise cypher will be executed directly.', data.othis)
           });
 
-          console.log(form);
+          // console.log(form);
 
     });
 
