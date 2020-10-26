@@ -9,11 +9,8 @@ import psycopg2
 import pandas as pd
 import mysql.connector
 from mysql.connector import errorcode
-from neomodel import db, config
+from neo4j import GraphDatabase
 from psycopg2 import OperationalError, errorcodes, errors
-
-
-config.ENCRYPTED_CONNECTION = False
 
 
 class ConvertDB:
@@ -44,7 +41,7 @@ class ConvertDB:
             self.logger.warning("Create directory: {}".format(path))
             os.mkdir(path)
 
-    def _execute_cypher(self, query):
+    def execute_cypher(self, query):
         """
         set up the cypher server
         db connect:
@@ -52,9 +49,14 @@ class ConvertDB:
         :return:
         """
         try:
-            db.set_connection('bolt://{}:{}@{}:{}'.format(self.neo4j_config['username'], self.neo4j_config['password'],
-                                                          self.neo4j_config['host'], self.neo4j_config['port']))
-            db.cypher_query(query)
+            driver = GraphDatabase.driver("bolt://{}:{}".format(self.neo4j_config['host'], self.neo4j_config['port']),
+                                          auth=(self.neo4j_config['username'], self.neo4j_config['password']))
+            session = driver.session()
+            res = session.run(query)
+            # res = session.read_transaction(res)
+            data = res.data()
+            driver.close()
+            return data
         except Exception as error:
             print("Can not connect the neo4j, please check the services and config")
             self.logger.error("Can not connect the neo4j, please check the services and config")
@@ -73,7 +75,7 @@ class ConvertDB:
 
         return res
 
-    def _execute_psql(self, query, args=()):
+    def execute_psql(self, query, args=()):
         """
         execute psql
         :param query: psql query
@@ -94,7 +96,7 @@ class ConvertDB:
         conn.close()
         return res
 
-    def _execute_sql(self, query, args=()):
+    def execute_mysql(self, query, args=()):
         """
         execute the sql query language
         :param query: sql query language
@@ -154,7 +156,7 @@ class ConvertDB:
         :return: all the tables name
         """
         # get all the tables as a node
-        tables = self._execute_sql("SELECT table_name as id FROM "
+        tables = self.execute_mysql("SELECT table_name as id FROM "
                                    "information_schema.tables "
                                    "where table_schema='{}';".format(self.mysql_config['database']))
         return tables
@@ -170,7 +172,7 @@ class ConvertDB:
             query = "SELECT `TABLE_NAME`,`REFERENCED_TABLE_NAME`"
         query += "FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` WHERE `TABLE_SCHEMA` = SCHEMA() " \
                  "AND `REFERENCED_TABLE_NAME` IS NOT NULL;"
-        relation_tables = self._execute_sql(query)
+        relation_tables = self.execute_mysql(query)
 
         return relation_tables
 
@@ -196,7 +198,7 @@ class ConvertDB:
               AND ccu.table_schema = tc.table_schema
         WHERE tc.constraint_type = 'FOREIGN KEY';
         """
-        return self._execute_psql(query)
+        return self.execute_psql(query)
 
     def read_relations(self):
         """
@@ -218,8 +220,8 @@ class ConvertDB:
         database = self.psql_config['database'] if self.db_name == 'psql' else self.mysql_config['database']
 
         # execute different sql query for select tables
-        all_table = self._execute_sql("SHOW TABLES;") if self.db_name != 'psql' else \
-            self._execute_psql("SELECT table_name as \"Tables_in_{}\" FROM information_schema.tables "
+        all_table = self.execute_mysql("SHOW TABLES;") if self.db_name != 'psql' else \
+            self.execute_psql("SELECT table_name as \"Tables_in_{}\" FROM information_schema.tables "
                                            "WHERE table_schema = 'public';".format(self.psql_config['database']))
         tables = []
         for t in all_table:
@@ -280,8 +282,8 @@ class ConvertDB:
         df.to_csv(filepath, index=False)
 
         query = "LOAD CSV WITH HEADERS FROM 'file:///{}.csv' AS row ".format(table_name)
-        table_schema = self._execute_sql("show columns from %s;" % table_name) if self.db_name != 'psql' else \
-            self._execute_psql("select column_name as \"Field\" "
+        table_schema = self.execute_mysql("show columns from %s;" % table_name) if self.db_name != 'psql' else \
+            self.execute_psql("select column_name as \"Field\" "
                                "from information_schema.columns where table_name = {}".format(table_name))
 
         query += " MERGE ({}:{} ".format(str(table_name).lower(), table_name)
@@ -326,8 +328,8 @@ class ConvertDB:
         if len(data) == 0:
             raise ValueError("Please insert at least one data in your table")
         if len(data) >= 100000 or self.output:
-            self._execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(table_name).lower(),
-                                                                         table_name, str(table_name).lower()))
+            self.execute_cypher("MATCH ({}:{})DETACH DELETE {};".format(str(table_name).lower(),
+                                                                        table_name, str(table_name).lower()))
             self._load_with_cypher(table_name, data)
         else:
             return self._load_with_csv(table_name, data)
@@ -358,7 +360,7 @@ class ConvertDB:
         :return:
         """
 
-        execute_query = self._execute_sql if self.db_name != 'psql' else self._execute_psql
+        execute_query = self.execute_mysql if self.db_name != 'psql' else self.execute_psql
         start = time.time()
         export_tables = self.read_relations()
         cypher_query = []
@@ -371,13 +373,13 @@ class ConvertDB:
         # table is the key name
         for table in export_tables:
             if export_tables[table] is None:
-                data = self._execute_sql("SELECT * FROM %s;" % table)
+                data = self.execute_mysql("SELECT * FROM %s;" % table)
                 if len(data) == 0:
                     raise ValueError("Please insert at least one data in your table")
 
                 exported.append(table)
                 # remove the old data firstly
-                self._execute_cypher(
+                self.execute_cypher(
                     "MATCH ({}:{}) DETACH DELETE {};".format(str(table).lower(), table, str(table).lower()))
                 # if the dataset is too large then use cypher query to load or output only
                 if len(data) >= 100000 or self.output:

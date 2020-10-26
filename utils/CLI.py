@@ -82,6 +82,15 @@ class CLI:
             sql_parser.generate_cypher(parse(sql), sql)
             print(sql_parser.get_cypher())
 
+    def convert_sql_with_str(self, sql_query):
+        """
+        transfer the sql to cypher with a string sql
+        :return: the cypher query result
+        """
+        sql_parser = SQLParser()
+        sql_parser.generate_cypher(parse(sql_query), sql_query)
+        return sql_parser.get_cypher()
+
     def load_web_conf(self):
         """
         load the config file for the web server

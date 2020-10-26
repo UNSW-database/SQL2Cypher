@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+import requests
 from view import app
 from configparser import ConfigParser
 
@@ -46,6 +48,7 @@ def load_config():
 @app.route('/')
 @app.route('/index')
 def index():
+    global cli
     if not check_config():
         return redirect(url_for('Config'))
     else:
@@ -113,8 +116,74 @@ def Config():
 
 @app.route('/sql2cypher')
 def Code():
-
     return render_template('code.html')
+
+
+@app.route('/convert', methods=["POST", "GET"])
+def Convert():
+    global cli
+    if request.method == "POST":
+        query = request.form.get('sql')
+        if cli is None:
+            cli = load_config()
+        return {"cypher": cli.convert_sql_with_str(query)}
+
+
+@app.route('/run-code', methods=["POST", "GET"])
+def run_code():
+    global cli
+    if request.method == "POST":
+        sql_type = request.form.get("type")
+        query = request.form.get('query')
+        if cli is None:
+            cli = load_config()
+        cli.load_web_conf()
+        t1 = time.time()
+        t2 = time.time()
+
+        if sql_type == "sql":
+            if cli.db_name == "mysql":
+                try:
+                    res = cli.cb.execute_mysql(query)
+                    t2 = time.time()
+                except Exception as err:
+                    res = {"result": None}
+            else:
+                try:
+                    res = cli.cb.execute_psql(query)
+                    t2 = time.time()
+                except Exception as err:
+                    res = {"result": None}
+        else:
+            try:
+                original = cli.cb.execute_cypher(query)
+                t2 = time.time()
+
+                headers = {
+                    'Content-type': 'application/json',
+                }
+
+                data = '{"statements":[{"statement":"%s", ' \
+                       '"parameters":{},"resultDataContents":["row","graph"]}]}' % query
+                response = requests.post('http://{}:7474/db/data/transaction/commit'.
+                                         format(cli.cb.neo4j_config['host']), headers=headers, data=data,
+                                         auth=(cli.cb.neo4j_config['username'], cli.cb.neo4j_config['password']))
+                # print(response)
+                # table_data = []
+                for d in original:
+                    d[list(original[0].keys())[0]] = str(d[list(original[0].keys())[0]])
+                # print(original)
+                return {"data": response.json(), "table_data": original, "keys": list(original[0].keys()) if type(original) is list else None,
+                        "cost": round(t2 - t1, 2), "original": original}
+
+            except Exception as err:
+                res = {"result": None}
+        return {"data": res, "keys": list(res[0].keys()) if type(res) is list else None, "cost": round(t2 - t1, 2)}
+
+
+@app.route('/graph-view', methods=["POST", "GET"])
+def view():
+    return render_template('view.html')
 
 
 if __name__ == '__main__':
