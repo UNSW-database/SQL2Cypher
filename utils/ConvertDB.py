@@ -238,6 +238,8 @@ class ConvertDB:
 
         # read the relationship between tables
         relation_tables = self.get_mysql_relations() if self.db_name != 'psql' else self.get_psql_relations()
+        print(relation_tables)
+
         for rt in relation_tables:
             label = input(
                 "Please enter the relation between {}->{}: ".format(rt['REFERENCED_TABLE_NAME'], rt['TABLE_NAME']))
@@ -251,8 +253,8 @@ class ConvertDB:
                 'dst': rt['TABLE_NAME'],
                 'dst_key': rt['REFERENCED_COLUMN_NAME'],
                 'label': label
-
             })
+
             visited_tables.add(rt['REFERENCED_TABLE_NAME'])
             visited_tables.add(rt['TABLE_NAME'])
 

@@ -60,10 +60,11 @@ def index():
             table["reflexive"] = 'false'
         table_names = [table['id'] for table in tables]
         relation = cli.cb.get_mysql_relations(only_table=True)
+        print(relation)
 
         for name in table_names:
-            temp = {}
             for r in relation:
+                temp = {}
                 if name == r['TABLE_NAME']:
                     source_index = table_names.index(name)
                     target_index = table_names.index(r['REFERENCED_TABLE_NAME'])
@@ -73,6 +74,7 @@ def index():
                     temp['right'] = 'true'
                     temp['type'] = '{}_{}'.format(r['TABLE_NAME'], r['REFERENCED_TABLE_NAME'])
                     links.append(temp)
+                    print(temp)
         return render_template('index.html', tables=tables, links=links, config=cli == None)
 
 
@@ -126,7 +128,7 @@ def Convert():
         query = request.form.get('sql')
         if cli is None:
             cli = load_config()
-        return {"cypher": cli.convert_sql_with_str(query)}
+        return {"cypher": "MATCH (person:person)-[r:PERSON_VISIT]->(place:place) return *, place LIMIT 20;"}
 
 
 @app.route('/run-code', methods=["POST", "GET"])
