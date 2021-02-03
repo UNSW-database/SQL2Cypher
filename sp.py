@@ -19,7 +19,8 @@ storage = [{
     'dst': 't2',
     'src_key': 't3 k1',
     'dst_key': 't3 k2',
-    'label': 'relationship label'
+    'type': 'isLabel',
+    'label': 'relationship label',
 }]
 
 
@@ -65,6 +66,12 @@ def parse_where(parses):
     }
     relation = ""
     condition = ""
+    # record all the visited node in the node graph
+    visited = []
+
+    # to record all the src and dst node
+    src = [v["src"] for v in storage]
+    dst = [v['dst'] for v in storage]
     if "where" in parses.keys():
         # where is should be a dict format
         if type(parses["where"]) is not dict:
@@ -90,7 +97,7 @@ def parse_where(parses):
                         check eq to get whether exists relationship
                         only this can be relationship
                         """
-                        if k is "eq":
+                        if k == "eq":
                             # get two keys
                             key1, key2 = val[k][0], val[k][1]
                             t1, pk1 = key1.split(".")
@@ -100,16 +107,26 @@ def parse_where(parses):
                             origin_table_name1 = tables[t1]
                             origin_table_name2 = tables[t2]
 
+                            # must has a start node, means there is a relationship
+                            # then check whether exist
+                            if origin_table_name1 in src and origin_table_name2 in dst:
+                                # 1->2
+                                pass
+                            elif origin_table_name2 in src and origin_table_name1 in dst:
+                                #  2->1
+                                pass
+
                             # to storage the relationship
-                            for st in storage:
-                                if origin_table_name1 == st["src"] and pk1 == st["src_key"]:
-                                    if origin_table_name2 == st["dst"] and pk2 == st["dst_key"]:
-                                        # means relationship 1->2
-                                        pass
-                                elif origin_table_name2 == st["src"] and pk2 == st["src_key"]:
-                                    if origin_table_name1 == st["dst"] and pk1 == st["dst_key"]:
-                                        # means relationship 2->1
-                                        pass
+                            # for st in storage:
+                            #     if origin_table_name1 == st["src"] and pk1 == st["src_key"]:
+                            #         if origin_table_name2 == st["dst"] and pk2 == st["dst_key"]:
+                            #             # means relationship 1->2
+                            #             relation += t1 + "-" + "[:{}]".format(st["label"]) + t2
+                            #     elif origin_table_name2 == st["src"] and pk2 == st["src_key"]:
+                            #         if origin_table_name1 == st["dst"] and pk1 == st["dst_key"]:
+                            #             # means relationship 2->1
+                            #             relation += t2 + "-" + "[{}]".format(st["label"]) + t1
+
 
                         else:
                             # just join the relation
