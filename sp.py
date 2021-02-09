@@ -14,14 +14,17 @@ parse sql query and convert it into cypher
 from moz_sql_parser import parse
 
 
-storage = [{
-    'src': 'title_basic',
-    'dst': 'title_crew',
-    'src_key': 'tconst',
-    'dst_key': 'tconst',
-    'type': 'no',
-    'label': 'KNOWN',
-}]
+storage = [
+    {
+        'src': 'A',
+        'dst': 'C',
+        'src_key': 'B b',
+        'dst_key': 'B b',
+        'type': 'isLabel',
+        'label': 'KNOWN',
+    },
+
+]
 
 
 def parse_from(parses):
@@ -120,45 +123,51 @@ def parse_where(parses):
                         origin_table_name1 = tables[t1]
                         origin_table_name2 = tables[t2]
 
+                        found = False
+
                         # consider relationships
                         for st in storage:
                             if origin_table_name1 == st["src"] and origin_table_name2 == st["dst"]:
                                 # 1->2
                                 relation += ", ({})-[:{}]->({}) ".format(t1, st["label"], t2)
+                                found = True
+                                break
                             elif origin_table_name2 == st["src"] and origin_table_name1 == st["dst"]:
                                 #  2->1
                                 relation += ", ({})-[:{}]->({}) ".format(t2, st["label"], t1)
+                                found = True
+                                break
                             elif origin_table_name1 == st["src"] and st["type"] == "isLabel":
                                 # join relationship, there should have a a->b->c relationship
                                 for tr in relationships:
-                                    if tr[0] == key2:
+                                    print(tr[0].split(".")[0], key2)
+                                    if tr[0].split(".")[0] == key2.split(".")[0]:
                                         # means should have a join relationship
                                         if origin_table_name2 == st["src_key"].split(" ")[0]:
                                             # add the relationship
                                             relation += ", ({})-[{}:{}]->({})".\
-                                                format(t1, t2, st["label"], tr[1].split(" ")[0])
+                                                format(t1, t2, st["label"], tr[1].split(".")[0])
                                             # remove the join conditions
-                                            del tr
-                                        else:
-                                            # can not find correct relationship
-                                            conditions.append("{}={}".format(key1, key2))
+                                            relationships.remove(tr)
+                                            found = True
+                                            break
                             elif origin_table_name2 == st["src"] and st["type"] == "isLabel":
                                 # join relationship
                                 # join relationship, there should have a a->b->c relationship
                                 for tr in relationships:
-                                    if tr[0] == key1:
+                                    if tr[0].split(".")[0] == key1.split(".")[0]:
                                         # means should have a join relationship
                                         if origin_table_name1 == st["src_key"].split(" ")[0]:
                                             # add the relationship
                                             relation += ", ({})-[{}:{}]->({})". \
-                                                format(t2, t1, st["label"], tr[1].split(" ")[0])
+                                                format(t2, t1, st["label"], tr[1].split(".")[0])
                                             # remove the join conditions
-                                            del tr
-                                        else:
-                                            # can not find correct relationship
-                                            conditions.append("{} = {}".format(key1, key2))
-                            else:
-                                conditions.append("{} = {}".format(key1, key2))
+                                            relationships.remove(tr)
+                                            found = True
+                                            break
+                        if not found:
+                            conditions.append("{} = {}".format(key1, key2))
+                        del re
 
                     condition += " AND ".join(conditions)
                 else:
@@ -169,9 +178,10 @@ def parse_where(parses):
                             conditions.append(" {} ".format(ope[key]).join([str(i) for i in operations[key]]))
 
                     condition += " OR ".join(conditions)
-    print(condition)
-    print(relation)
-    return command + relation + condition
+    command += relation
+    if condition != " WHERE ":
+        command += condition
+    return command
 
 
 def parse_limit(parses):
@@ -186,7 +196,7 @@ def parse_limit(parses):
         else:
             return " LIMIT " + str(parses["limit"])
 
-    return None
+    return ""
 
 
 def parse_head(values):
@@ -219,13 +229,25 @@ def parse_head(values):
         pass
 
 
-if __name__ == '__main__':
-    raw = "SELECT a, b FROM title_basic tb, title_rating tr, title_crew tc, title_akas ta WHERE tb.tconst = tc.tconst " \
-          "AND tc.tconst = ta.tconst AND ta.a >= 1 LIMIT 100000 ;"
+def sql_test():
+    """
+    run sql to cypher queries test
+    :return:
+    """
+    raw = "SELECT * FROM A a, B b, C c WHERE a.a = b.a and b.b = c.b"
     values = parse(raw)
+    print(values)
+
     print(parse_head(values))
+
+
+if __name__ == '__main__':
+    sql_test()
+    # raw = "SELECT a, b FROM title_basic tb, title_rating tr, title_crew tc, title_akas ta WHERE tb.tconst = tc.tconst " \
+    #       "AND tc.tconst = ta.tconst AND ta.a >= 1 LIMIT 100000 ;"
+    # values = parse(raw)
+    # print(parse_head(values))
     # parse_where(values)
 
 
     # parse_head(values)
-
