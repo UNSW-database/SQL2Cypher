@@ -72,8 +72,6 @@ def parse_where(parses):
     }
     relation = ""
     condition = " WHERE "
-    # record all the visited node in the node graph
-    visited = []
 
     # to record all the src and dst node
     # src = [v["src"] for v in storage]
@@ -223,10 +221,10 @@ def parse_head(values):
         return command
     elif "update" in values.keys():
         # means it is update query, nodes update and rel update
-        pass
+        raise Exception("Does not support update queries now")
     elif "delete" in values.keys():
         # means it is a delete query
-        pass
+        raise Exception("Does not support delete queries now")
 
 
 def sql_test():
@@ -234,11 +232,11 @@ def sql_test():
     run sql to cypher queries test
     :return:
     """
-    raw = "SELECT * FROM A a, B b, C c WHERE a.a = b.a and b.b = c.b"
+    raw = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt' WHERE CustomerID = 1;"
     values = parse(raw)
     print(values)
 
-    print(parse_head(values))
+    # print(parse_head(values))
 
 
 if __name__ == '__main__':
