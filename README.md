@@ -158,6 +158,8 @@ WHERE tc.constraint_type = 'FOREIGN KEY';
 ```
 # TODO
 
-- [x] Convert MySQL database into Neo4J with relation.
+- [x] Convert MySQL database~~~~ into Neo4J with relation.
 - [x] Make join SQL query works for neo4j. (It works on some sample join query)
 - [x] Interactive CLI and WebUI.
+- [x] Finish the queries translation.
+- [ ] Need to test whether working correctly

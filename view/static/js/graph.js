@@ -265,28 +265,25 @@ function restart() {
 }
 
 function mousedown() {
-    // prevent I-bar on drag
-    //d3.event.preventDefault();
+      // because :active only works in WebKit?
+      svg.classed('active', true);
 
-    // because :active only works in WebKit?
-    svg.classed('active', true);
+      if (d3.event.ctrlKey || mousedownNode || mousedownLink) return;
 
-    // if(d3.event.ctrlKey || mousedown_node || mousedown_link) return;
-    //
-    // // insert new node at point
-    // var vertex_id = prompt("Please enter term", "vertex");
-    //
-    //
-    // var point = d3.mouse(this),
-    //     node = {id: vertex_id, reflexive: false};
-    // node.x = point[0];
-    // node.y = point[1];
-    //
-    //
-    //
-    // nodes.push(node);
+      console.log(nodes);
+      // insert new node at point
+      // const point = d3.mouse(this);
+      const x = nodes[0].x + 10;
+      const y = nodes[0].y + 10;
+      const node_id = prompt("Please enter node ID: ");
+      console.log(node_id);
+      // to avoid the invalid node ID
+      if (node_id !== null && node_id !== ""){
+          const node = { id: node_id, reflexive: false, x: x, y: y };
+          nodes.push(node);
+      }
 
-    restart();
+      restart();
 }
 
 function mousemove() {
@@ -335,6 +332,12 @@ function keydown() {
     if(d3.event.keyCode === 17) {
         circle.call(force.drag);
         svg.classed('ctrl', true);
+    }
+
+    switch (d3.event.keyCode) {
+        case 73:
+            mousedown();
+            break;
     }
 
     if(!selected_node && !selected_link) return;

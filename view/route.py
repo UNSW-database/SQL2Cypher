@@ -44,7 +44,6 @@ def load_config():
     return CLI(output, db_name=db)
 
 
-
 @app.route('/')
 @app.route('/index')
 def index():
@@ -188,5 +187,9 @@ def view():
     return render_template('view.html')
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+def main():
+    app.run(debug=True)
+
+
+# if __name__ == '__main__':
+#     app.run(debug=True, host='0.0.0.0')

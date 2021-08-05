@@ -173,6 +173,7 @@ class ConvertDB:
         query += "FROM `INFORMATION_SCHEMA`.`KEY_COLUMN_USAGE` WHERE `TABLE_SCHEMA` = SCHEMA() " \
                  "AND `REFERENCED_TABLE_NAME` IS NOT NULL;"
         relation_tables = self.execute_mysql(query)
+        # print(relation_tables)
 
         return relation_tables
 
@@ -428,7 +429,7 @@ class ConvertDB:
             for index, cypher in enumerate(cypher_query):
                 self._progress(index, total, status='Execute cypher query')
                 print("Execute: {}".format(cypher))
-                # self._execute_cypher(cypher)
+                self.execute_cypher(cypher)
         print("Export finished!")
         self.logger.warning("Export finished {} database to graph database".format(self.db_name))
 
@@ -439,5 +440,5 @@ class ConvertDB:
             os.remove(file)
 
         end = time.time()
-        self.logger.warning("Cost {:2}s to exporting {} database".format(round(float(end - start)), 2), self.db_name)
+        self.logger.warning("Cost {:2}s to exporting {} database".format(round(float(end - start), 2), self.db_name))
         print("Cost {:2}s to exporting".format(round(float(end - start)), 2))

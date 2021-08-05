@@ -227,6 +227,18 @@ def parse_head(values):
         raise Exception("Does not support delete queries now")
 
 
+def parse_sql(sql: str):
+    """
+    to execute the sql query parse function
+    :param sql: sql queries
+    :return: cypher string
+    """
+    if "select" in sql.lower():
+        parse_head(parse(sql))
+    else:
+        pass
+
+
 def sql_test():
     """
     run sql to cypher queries test

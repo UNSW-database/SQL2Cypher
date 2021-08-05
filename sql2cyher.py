@@ -9,7 +9,7 @@ import os
 import sys
 import argparse
 from view import app
-import view.route
+from view.route import main
 from utils.CLI import CLI
 
 
@@ -57,6 +57,7 @@ if __name__ == '__main__':
     #     print("Clean all the cache and temp files")
 
     if args.web_ui:
+        # print(app.static_folder)
         app.run(debug=True)
     # if len(sys.argv) > 2:
     #     print("Please have a look the help: python3 sql2cypher.py --help")

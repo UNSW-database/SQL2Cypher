@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>SQL TO CYPHER</title>
-    <link rel="stylesheet" href="../static/css/layui.css">
-    <link rel="stylesheet" href="../static/css/graph.css">
-    <link rel="stylesheet" href="../static/layer/theme/default/layer.css">
+    <link rel="stylesheet"  href="{{ url_for('static', filename = 'css/layui.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/graph.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/layer.css') }}">
 </head>
 <body class="layui-layout-body">
   <div class="layui-layout layui-layout-admin">
@@ -39,7 +39,7 @@
           <div class="layui-col-md4">
               <div>
                 <h2 style="color: #2e6c80;">How to use the SQL2Cypher:</h2>
-                <p><img src="../static/images/mouse-left-button.png" alt="" width="40" height="40" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>
+                <p><img src="{{ url_for('static', filename = 'images/mouse-left-button.png') }}" alt="" width="40" height="40" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>
                 <div style="margin-top: 10px">After selecting a node you can&nbsp;<span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">drag</span>&nbsp;an edge to connect with another node.</div>
                 <div style="margin-top: 10px">After the mouse left click, the following operations are provided:</div>
                 <div style="margin: 10px">Click the <span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">C</span>&nbsp;button to change the edge's label information.</div>
@@ -55,16 +55,16 @@
 
   </div>
 
-  <script src="../static/js/layui.js"></script>
-  <script src="../static/layer/layer.js"></script>
-  <script src="../static/js/d3.v3.min.js"></script>
+  <script src="{{ url_for('static', filename = 'js/layui.js') }}"></script>
+  <script src="{{ url_for('static', filename = 'js/layer.js') }}"></script>
+  <script src="{{ url_for('static', filename = 'js/d3.v3.min.js') }}"></script>
 <!--  <script src="../static/js/graph.js"></script>-->
   <script>
     if (JSON.parse('{{config | tojson}}') !== true) {
       function help_info() {
           let msg = "<div style='margin: 20px'>";
           msg += "<h2 style=\"color: #2e6c80;\">How to use the SQL2Cypher:</h2>\n" +
-              "                <p><img src=\"../static/images/mouse-left-button.png\" alt=\"\" width=\"40\" height=\"40\" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>\n" +
+              "                <p><img src=\"{{ url_for('static', filename = 'images/mouse-left-button.png') }}\" alt=\"\" width=\"40\" height=\"40\" />&nbsp;You can select nodes or edges by using&nbsp;mouse left click</p>\n" +
               "                <div style=\"margin-top: 10px\">After selecting a node you can&nbsp;<span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">drag</span>&nbsp;an edge to connect with another node.</div>\n" +
               "                <div style=\"margin-top: 10px\">After the mouse left click, the following operations are provided:</div>\n" +
               "                <div style=\"margin: 10px\">Click the <span style=\"background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;\">C</span>&nbsp;button to change the edge's label information.</div>\n" +
