@@ -1,3 +1,12 @@
+[![License](https://img.shields.io/badge/License-Flask-blue.svg)](https://flask.palletsprojects.com/en/1.1.x/) [![License](https://img.shields.io/badge/License-Python3-blue.svg)](https://www.python.org/) ![passing](https://img.shields.io/badge/build-passing-green)
+
+# Reference
+The sql2cypher project is based on 'SQL2Cypher: Automated Data and Query Migration from RDBMS to GDBMS' paper.
+
+Autho list: Shunyang Li, Zhengyi Yang, Xianhang Zhang, Xuemin Lin and Wenjie Zhang.
+
+Corresponding author contact: sli@cse.unsw.edu.au
+
 # Attention
 Before convert sql to cypher make sure the programming has permission to write files. 
 You can execute the following code to get enough permission for python3:
@@ -5,18 +14,19 @@ You can execute the following code to get enough permission for python3:
 sudo chmod 777 /var/lib/neo4j/import
 ```
 
+# Configuration and usage
 Usage:
 ```shell script
 python3 sql2cypher.py --help
 ```
 
-# Config
+## Config
 Before execute the code, please make sure done the config:
 ```shell script
 cd conf
 vim db.ini
 ```
-Please complete the config then it should work.
+Please complete the config then it works.
 
 # Convert SQL to Cypher
 
@@ -61,7 +71,7 @@ In `sql.txt` you can find more examples.
 For test whether the syntax correct, you can import the data to MySQL and NEO4J.
 You can read how to [import](/data/README.md) 
 
-# Useful packages
+# Required packages
 
 1. [sqlparse](https://sqlparse.readthedocs.io/en/latest/intro/)
 
@@ -78,8 +88,6 @@ You can read how to [import](/data/README.md)
    """
    ```
 
-   Another [blog](https://blog.csdn.net/qq_39607437/article/details/79620383)
-
 2. [cypher](https://www.w3cschool.cn/neo4j/neo4j_cql_match_command.html)
     This is the cypher tutorial.
 
@@ -89,6 +97,7 @@ You can read how to [import](/data/README.md)
    ```json
    '{"select": [{"value": "p.ProductName"}, {"value": "p.UnitPrice"}], "from": {"value": "products", "name": "p"}, "orderby": {"value": "p.UnitPrice", "sort": "desc"}, "limit": 10}'
    ```
+
 4. [py2neo](https://py2neo.org/v4/index.html)
    similar with neomodel
 
@@ -128,38 +137,3 @@ And it looks like:
   }
 ]
 ```
-
-# psql select
-select all the tables:
-```sql
-SELECT table_name FROM information_schema.tables
-       WHERE table_schema = 'public';
-
--- select with the owner
-SELECT table_name FROM information_schema.tables
-       WHERE table_schema = 'public' and table_catalog ='lsy';
-```
-Select tables primary key and foreign key
-```sql
-SELECT
-    tc.table_name, 
-    kcu.column_name, 
-    ccu.table_name AS foreign_table_name,
-    ccu.column_name AS foreign_column_name 
-FROM 
-    information_schema.table_constraints AS tc 
-    JOIN information_schema.key_column_usage AS kcu
-      ON tc.constraint_name = kcu.constraint_name
-      AND tc.table_schema = kcu.table_schema
-    JOIN information_schema.constraint_column_usage AS ccu
-      ON ccu.constraint_name = tc.constraint_name
-      AND ccu.table_schema = tc.table_schema
-WHERE tc.constraint_type = 'FOREIGN KEY';
-```
-# TODO
-
-- [x] Convert MySQL database~~~~ into Neo4J with relation.
-- [x] Make join SQL query works for neo4j. (It works on some sample join query)
-- [x] Interactive CLI and WebUI.
-- [x] Finish the queries translation.
-- [ ] Need to test whether working correctly
